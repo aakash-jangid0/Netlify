@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "extends": "../tsconfig.json",
+  "exclude": [
+    "**/*.js",
+    "**/diagnosticService.js",
+    "utils/diagnosticService.js"
+  ]
+}
