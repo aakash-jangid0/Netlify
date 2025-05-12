@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useScroll, motion, AnimatePresence } from 'framer-motion';
-import PageTransition from '../components/PageTransition';
-import MenuCard from '../components/MenuCard';
-import SearchBar from '../components/SearchBar';
-import QuickCategorySelector from '../components/QuickCategorySelector';
-import FilterModal from '../components/FilterModal';
+import PageTransition from '../components/common/PageTransition';
+import MenuCard from '../components/menu/MenuCard';
+import SearchBar from '../components/common/SearchBar';
+import QuickCategorySelector from '../components/menu/QuickCategorySelector';
+import FilterModal from '../components/menu/FilterModal';
 import { useMenuItems } from '../hooks/useMenuItems';
 import { useCategories } from '../hooks/useCategories';
 

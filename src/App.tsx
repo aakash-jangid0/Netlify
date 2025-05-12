@@ -2,9 +2,9 @@ import { BrowserRouter as Router, Routes, Route, useSearchParams, Navigate, useL
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
-import Layout from './components/Layout';
-import ErrorBoundary from './components/ErrorBoundary';
-import NetworkStatus from './components/NetworkStatus.jsx';
+import Layout from './components/layout/Layout';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import NetworkStatus from './components/common/NetworkStatus.jsx';
 import ErrorsPage from './pages/ErrorsPage';
 
 // Create a separate component for diagnostic redirection

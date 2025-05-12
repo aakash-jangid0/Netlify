@@ -21,7 +21,7 @@ interface CreateOrderParams {
   customerPhone?: string;
   tableNumber?: string;
   orderType: 'dine-in' | 'takeaway';
-  paymentMethod: 'cash' | 'card' | 'upi';
+  paymentMethod: 'cash' | 'card' | 'upi' | 'razorpay' | 'pending';
   user_id?: string; // Added user_id property to fix type error
 }
 
@@ -133,11 +133,12 @@ export function useOrders() {
         discount,
         total_amount: totalAmount,
         status: 'pending',
-        payment_status: paymentMethod === 'cash' ? 'pending' : 'completed',
+        // For cash and pending payments, always set to 'pending'
+        payment_status: (paymentMethod === 'cash' || paymentMethod === 'pending') ? 'pending' : 'completed',
         customer_phone: customerPhone,
         table_number: tableNumber,
         order_type: orderType,
-        payment_method: paymentMethod
+        payment_method: paymentMethod === 'pending' ? 'cash' : paymentMethod // Default to cash for pending payments
       };
 
       // First, try creating the order with user_id
@@ -198,7 +199,8 @@ export function useOrders() {
 
       if (itemsError) throw itemsError;
 
-      toast.success('Order placed successfully!');
+      // Remove this toast to avoid duplicate success messages
+      // The success message will be shown in the payment completion handler
       return order;
     } catch (error: any) {
       toast.error(error.message || 'Failed to create order');

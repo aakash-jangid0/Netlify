@@ -1,10 +1,10 @@
 import React from 'react';
 import { useScroll } from 'framer-motion';
-import PageTransition from '../../components/PageTransition';
+import PageTransition from '../../components/common/PageTransition';
 import MenuHeader from './components/MenuHeader';
 import MenuGrid from './components/MenuGrid';
 import CategorySelector from './components/CategorySelector';
-import FilterModal from '../../components/FilterModal';
+import FilterModal from '../../components/menu/FilterModal';
 import { useMenuFilters } from './hooks/useMenuFilters';
 import { useHeaderAnimation } from './hooks/useHeaderAnimation';
 

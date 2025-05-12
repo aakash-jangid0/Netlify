@@ -10,6 +10,7 @@ import orderRoutes from './routes/orders.js';
 import authRoutes from './routes/auth.js';
 import razorpayRoutes from './routes/razorpay.js';
 import categoryRoutes from './routes/categories.js';
+import paymentsRoutes from './routes/payments.js';
 
 // Get directory name properly in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -28,9 +29,17 @@ const app = express();
 // Middleware
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
 // Routes
 app.use('/api/menu', menuRoutes);
@@ -38,6 +47,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/razorpay', razorpayRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/payments', paymentsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
