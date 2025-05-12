@@ -34,13 +34,15 @@ export default function PayrollManagement({
   const [showForm, setShowForm] = useState(false);
   const [editingPayroll, setEditingPayroll] = useState<PayrollRecord | null>(null);
   const [formData, setFormData] = useState({
+    staff_id: '',
     base_salary: 0,
     hourly_rate: 0,
     bank_account: '',
     tax_information: {},
     allowances: {},
     deductions: {},
-    payment_schedule: 'monthly'
+    payment_schedule: 'monthly',
+    last_payment_date: new Date().toISOString().split('T')[0]
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,13 +58,15 @@ export default function PayrollManagement({
       setShowForm(false);
       setEditingPayroll(null);
       setFormData({
+        staff_id: '',
         base_salary: 0,
         hourly_rate: 0,
         bank_account: '',
         tax_information: {},
         allowances: {},
         deductions: {},
-        payment_schedule: 'monthly'
+        payment_schedule: 'monthly',
+        last_payment_date: new Date().toISOString().split('T')[0]
       });
     } catch (error) {
       toast.error('Failed to save payroll record');
@@ -125,13 +129,15 @@ export default function PayrollManagement({
                   onClick={() => {
                     setEditingPayroll(record);
                     setFormData({
+                      staff_id: record.staff_id,
                       base_salary: record.base_salary,
                       hourly_rate: record.hourly_rate,
                       bank_account: record.bank_account,
                       tax_information: record.tax_information,
                       allowances: record.allowances,
                       deductions: record.deductions,
-                      payment_schedule: record.payment_schedule
+                      payment_schedule: record.payment_schedule,
+                      last_payment_date: record.last_payment_date
                     });
                     setShowForm(true);
                   }}
@@ -176,7 +182,7 @@ export default function PayrollManagement({
                 {Object.entries(record.tax_information).map(([key, value]) => (
                   <div key={key} className="flex justify-between text-sm">
                     <span className="text-gray-600">{key}</span>
-                    <span>{value}</span>
+                    <span>{String(value)}</span>
                   </div>
                 ))}
               </div>
@@ -223,6 +229,19 @@ export default function PayrollManagement({
                 {editingPayroll ? 'Edit Payroll Record' : 'Add New Payroll Record'}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Staff ID
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.staff_id}
+                    onChange={(e) => setFormData({ ...formData, staff_id: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Base Salary

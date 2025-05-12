@@ -17,6 +17,7 @@ interface InventoryItem {
   max_quantity: number;
   cost_price: number;
   supplier: string;
+  last_restocked: string;
   storage_location: string;
   expiry_date?: string;
   status: 'in_stock' | 'low_stock' | 'out_of_stock';

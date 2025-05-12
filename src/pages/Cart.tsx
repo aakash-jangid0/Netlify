@@ -58,7 +58,15 @@ function Cart() {
     setIsProcessing(true);
     try {
       // Use the received payment method if provided, otherwise use the selected one from state
-      const finalPaymentMethod = receivedPaymentMethod || paymentMethod;
+      // Ensure payment method is one of the valid types
+      let finalPaymentMethod: 'cash' | 'card' | 'upi' = paymentMethod;
+      
+      // If we received an external payment method, validate it
+      if (receivedPaymentMethod) {
+        if (['cash', 'card', 'upi'].includes(receivedPaymentMethod)) {
+          finalPaymentMethod = receivedPaymentMethod as 'cash' | 'card' | 'upi';
+        }
+      }
       
       const order = await createOrder({
         items: cartItems.map(item => ({
@@ -71,7 +79,7 @@ function Cart() {
         customerName: user?.user_metadata?.name || user?.email || '',
         tableNumber: orderType === 'dine-in' ? tableNumber : undefined,
         orderType,
-        paymentMethod: finalPaymentMethod
+        paymentMethod: finalPaymentMethod as 'cash' | 'card' | 'upi'
       });
       
       // Use our consistent utility function to handle invoice generation, saving, and printing

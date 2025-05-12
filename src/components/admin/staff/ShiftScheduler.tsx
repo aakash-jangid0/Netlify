@@ -40,9 +40,15 @@ export default function ShiftScheduler({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingShift) {
-      onEditShift(editingShift.id, formData);
+      onEditShift(editingShift.id, {
+        ...formData,
+        shift_type: formData.shift_type as 'morning' | 'afternoon' | 'evening' | 'night'
+      });
     } else {
-      onAddShift(formData);
+      onAddShift({
+        ...formData,
+        shift_type: formData.shift_type as 'morning' | 'afternoon' | 'evening' | 'night'
+      });
     }
     setShowForm(false);
     setEditingShift(null);

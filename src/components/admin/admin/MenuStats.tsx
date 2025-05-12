@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MenuItem } from '../../types/menu';
+import { MenuItem } from '../../../types/menu';
 import { Pizza, DollarSign, Clock } from 'lucide-react';
 
 interface MenuStatsProps {

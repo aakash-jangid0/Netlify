@@ -28,10 +28,10 @@ export default function PerformanceReview({
 }: PerformanceReviewProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Omit<Review, 'id'>>({
     staff_id: '',
     review_date: '',
-    rating: 'good' as const,
+    rating: 'good',
     goals_achieved: [''],
     areas_of_improvement: [''],
     comments: '',
@@ -117,7 +117,7 @@ export default function PerformanceReview({
                     setFormData({
                       staff_id: review.staff_id,
                       review_date: review.review_date,
-                      rating: review.rating,
+                      rating: review.rating as 'excellent' | 'good' | 'satisfactory' | 'needs_improvement' | 'unsatisfactory',
                       goals_achieved: review.goals_achieved,
                       areas_of_improvement: review.areas_of_improvement,
                       comments: review.comments,

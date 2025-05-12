@@ -27,7 +27,7 @@ function ValueTracker({ items }: ValueTrackerProps) {
     }, {});
 
     // Find highest and lowest value categories
-    const categories = Object.entries(categoryValues).sort((a, b) => b[1] - a[1]);
+    const categories = Object.entries(categoryValues).sort((a, b) => Number(b[1]) - Number(a[1]));
     const highestCategory = categories[0] || ['None', 0];
     const lowestCategory = categories[categories.length - 1] || ['None', 0];
 
