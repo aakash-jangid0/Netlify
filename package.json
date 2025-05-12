@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "preinstall": "echo 'Starting preinstall' && npx npm-force-resolutions",
-    "dev": "next dev",
-    "build": "node build-debug.mjs && CI=false NODE_OPTIONS=--max-old-space-size=4096 next build",
-    "start": "next start",
+    "dev": "vite",
+    "build": "node build-debug.mjs && CI=false NODE_OPTIONS=--max-old-space-size=4096 tsc && vite build",
+    "start": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "vite:dev": "vite",
-    "vite:build": "tsc && vite build",
+    "next:dev": "next dev",
+    "next:build": "next build",
+    "next:start": "next start",
     "preview": "vite preview",
     "gen:types": "supabase gen types typescript --project-id luuhtinbbwheqzubeuar > src/types/supabase.ts"
   },
