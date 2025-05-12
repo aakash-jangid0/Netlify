@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MenuItem } from '../../../types/menu';
-import MenuCard from '../../../components/MenuCard';
+import MenuCard from '../../../components/menu/MenuCard';
 
 interface MenuGridProps {
   items: MenuItem[];

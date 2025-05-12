@@ -7,10 +7,10 @@ import {
 } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import PageTransition from '../components/PageTransition';
+import PageTransition from '../components/common/PageTransition';
 import { supabase } from '../lib/supabase';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
-import FeedbackForm from '../components/FeedbackForm';
+import FeedbackForm from '../components/feedback/FeedbackForm';
 
 interface OrderStatus {
   status: 'pending' | 'preparing' | 'ready' | 'delivered';
@@ -80,6 +80,14 @@ function OrderTracking() {
 
   useEffect(() => {
     fetchOrder();
+    
+    // Set up automatic refresh every 5 seconds
+    const intervalId = setInterval(() => {
+      fetchOrder();
+    }, 5000);
+    
+    // Clean up the interval on component unmount
+    return () => clearInterval(intervalId);
   }, [orderId]);
 
   // Setup real-time sync for order updates

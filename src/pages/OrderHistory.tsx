@@ -5,10 +5,10 @@ import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
-import PageTransition from '../components/PageTransition';
+import PageTransition from '../components/common/PageTransition';
 import { viewOrDownloadInvoice } from '../utils/invoiceUtils';
 import { useOrders } from '../hooks/useOrders';
-import FeedbackForm from '../components/FeedbackForm';
+import FeedbackForm from '../components/feedback/FeedbackForm';
 
 function OrderHistory() {
   const { addToCart } = useCart();

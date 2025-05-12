@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { UtensilsCrossed, Clock, Star, ArrowRight } from 'lucide-react';
-import PageTransition from '../components/PageTransition';
+import PageTransition from '../components/common/PageTransition';
 import { motion } from 'framer-motion';
 
 const features = [

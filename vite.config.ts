@@ -17,4 +17,9 @@ export default defineConfig({
       '@': resolve(__dirname, 'src')
     },
   },
+  // Make sure environment variables are properly exposed
+  define: {
+    // This allows us to replace process.env.NODE_ENV with the actual value
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+  },
 });
