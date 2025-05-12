@@ -33,6 +33,7 @@
     "node_modules",
     "dist",
     "**/*.js",
-    "**/diagnosticService.js"
+    "**/diagnosticService.js",
+    "supabase/functions/**/*.ts"
   ]
 }

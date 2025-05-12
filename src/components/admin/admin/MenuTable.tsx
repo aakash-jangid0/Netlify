@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MenuItem } from '../../types/menu';
+import { MenuItem } from '../../../types/menu';
 
 interface MenuTableProps {
   items: MenuItem[];

@@ -130,7 +130,7 @@ function Navbar() {
             {/* User Menu */}
             {user ? (
               <div className="flex items-center space-x-4">
-                <span className="text-gray-700">{user.name}</span>
+                <span className="text-gray-700">{user.user_metadata?.name || user.email}</span>
                 <motion.button
                   whileHover={{ scale: 1.1, rotate: 180 }}
                   whileTap={{ scale: 0.9 }}
@@ -194,7 +194,7 @@ function Navbar() {
                 {user ? (
                   <>
                     <div className="px-4 py-3 text-gray-700">
-                      {user.name}
+                      {user.user_metadata?.name || user.email}
                     </div>
                     <button
                       onClick={handleLogout}

@@ -7,4 +7,5 @@ export interface MenuItem {
   category: string;
   preparationTime: number;
   isAvailable: boolean;
+  dietaryTags?: string[];
 }

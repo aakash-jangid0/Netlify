@@ -1,15 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
-
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string, phone?: string) => Promise<void>;
-  signOut: () => Promise<void>;
-}
+import { AuthContextType } from './AuthContext';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -49,40 +42,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       
       if (data.user) {
-        // Create a customer record with phone number
-        if (phone) {
-          await supabase
-            .from('customers')
-            .upsert({
-              user_id: data.user.id,
-              name,
-              email,
-              phone
-            });
-        }
-        
-        toast.success('Account created successfully!');
+        toast.success('Registration successful! Please verify your email.');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create account');
+      toast.error(error.message || 'An error occurred during sign up');
       throw error;
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       });
-
       if (error) throw error;
-      
-      if (data.user) {
-        toast.success('Logged in successfully!');
-      }
+      toast.success('Signed in successfully!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to sign in');
+      toast.error(error.message || 'An error occurred during sign in');
       throw error;
     }
   };
@@ -91,30 +68,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      toast.success('Logged out successfully');
+      toast.success('Signed out successfully!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to sign out');
+      toast.error(error.message || 'An error occurred during sign out');
       throw error;
     }
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      signIn,
-      signUp,
-      signOut
-    }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }

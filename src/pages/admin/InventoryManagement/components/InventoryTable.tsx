@@ -28,6 +28,8 @@ interface InventoryTableProps {
   onEdit: (item: InventoryItem) => void;
   onDelete: (id: string) => void;
   loading: boolean;
+  selectedItems?: string[];
+  onSelectItems?: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export default function InventoryTable({

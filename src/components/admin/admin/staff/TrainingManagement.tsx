@@ -51,7 +51,10 @@ export default function TrainingManagement({
         await onEditTraining(editingTraining.id, formData);
         toast.success('Training updated successfully');
       } else {
-        await onAddTraining(formData);
+        await onAddTraining({
+          ...formData,
+          staff_id: 'default-staff-id' // Make sure to replace with proper staff_id value
+        });
         toast.success('Training added successfully');
       }
       setShowForm(false);
