@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "preinstall": "npx npm-force-resolutions",
+    "preinstall": "echo 'Starting preinstall' && npx npm-force-resolutions",
     "dev": "next dev",
-    "build": "node netlify-debug.js && next build",
+    "build": "node build-debug.mjs && CI=false NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "vite:dev": "vite",
