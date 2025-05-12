@@ -4,8 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "dev": "next dev",
-    "build": "next build",
+    "build": "node netlify-debug.js && next build",
     "start": "next start",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "vite:dev": "vite",
@@ -73,5 +74,9 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "resolutions": {
+    "jspdf": "^2.5.1",
+    "path-to-regexp": "^6.2.1"
   }
 }
