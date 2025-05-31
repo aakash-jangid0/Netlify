@@ -2,18 +2,19 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "strict": true,
     "lib": ["esnext", "dom"],
     "skipLibCheck": true,
     "noEmit": true,
+    "baseUrl": ".",
+    "outDir": "dist",
     "typeRoots": [
-      "./node_modules/@types",
-      "./.deno/types"
-    ],
-    "types": ["deno"]
+      "./node_modules/@types"
+    ]
   },
-  "include": ["supabase/functions/**/*.ts"],
+  "include": ["./functions/**/*.ts"],
   "exclude": ["node_modules"]
 }

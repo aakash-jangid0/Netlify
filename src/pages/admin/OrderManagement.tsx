@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Package, Check, X, Phone, AlertTriangle, Download, FileText, Printer } from 'lucide-react';
+import { Clock, Package, Check, X, Phone, AlertTriangle, Download, FileText, Printer, CreditCard } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import { viewOrDownloadInvoice, fetchInvoiceByOrderId, printInvoice } from '../../utils/invoiceUtils';
@@ -134,6 +134,29 @@ function OrderManagement() {
     } catch (err) {
       console.error('Error updating order status:', err);
       toast.error('Failed to update order status');
+    }
+  };
+  
+  const updatePaymentStatus = async (orderId: string, newStatus: Order['payment_status']) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ payment_status: newStatus })
+        .eq('id', orderId);
+
+      if (updateError) throw updateError;
+
+      // Update local state to reflect the new payment status immediately
+      setOrders(currentOrders => 
+        currentOrders.map(order => 
+          order.id === orderId ? { ...order, payment_status: newStatus } : order
+        )
+      );
+
+      toast.success(`Payment status updated to ${newStatus}`);
+    } catch (err) {
+      console.error('Error updating payment status:', err);
+      toast.error('Failed to update payment status');
     }
   };
 
@@ -323,52 +346,33 @@ function OrderManagement() {
               {order.items.map((item) => (
                 <div key={item.id} className="flex justify-between items-center mb-2">
                   <span>{item.quantity}x {item.name}</span>
-                  <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                  <span>Rs{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
               <div className="flex justify-between items-center font-semibold mt-4 pt-4 border-t">
                 <span>Total</span>
-                <span>₹{order.total_amount.toFixed(2)}</span>
+                <span>Rs{order.total_amount.toFixed(2)}</span>
               </div>
             </div>
 
             <div className="flex justify-end space-x-2">
-              {order.status === 'pending' && (
-                <>
-                  <button
-                    onClick={() => updateOrderStatus(order.id, 'preparing')}
-                    className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                  >
-                    <Package className="w-4 h-4 mr-2" />
-                    Start Preparing
-                  </button>
-                  <button
-                    onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                    className="flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Cancel
-                  </button>
-                </>
-              )}
-              {order.status === 'preparing' && (
-                <button
-                  onClick={() => updateOrderStatus(order.id, 'ready')}
-                  className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  Mark as Ready
-                </button>
-              )}
-              {order.status === 'ready' && (
-                <button
-                  onClick={() => updateOrderStatus(order.id, 'delivered')}
-                  className="flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  Mark as Delivered
-                </button>
-              )}
+              <button
+                onClick={() => updatePaymentStatus(
+                  order.id, 
+                  order.payment_status === 'pending' ? 'completed' : 'pending'
+                )}
+                className={`flex items-center px-4 py-2 ${
+                  order.payment_status === 'pending' 
+                    ? 'bg-green-500 hover:bg-green-600' 
+                    : 'bg-yellow-500 hover:bg-yellow-600'
+                } text-white rounded-lg`}
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                {order.payment_status === 'pending' 
+                  ? 'Mark as Paid' 
+                  : 'Mark as Pending'
+                }
+              </button>
               <button
                 onClick={() => handleViewInvoice(order.id)}
                 className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"

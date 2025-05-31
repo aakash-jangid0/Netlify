@@ -947,28 +947,26 @@ const StaffProfile = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Salary Information</h3>
                   <div className="bg-gray-50 rounded-lg p-5 mb-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
+                    <div className="grid grid-cols-2 gap-4">                      <div>
                         <p className="text-xs text-gray-500">Base Salary</p>
                         <p className="text-xl font-bold text-gray-900">
-                          ${staff.base_salary?.toLocaleString() || '0'}
+                          Rs{staff.base_salary?.toLocaleString() || '0'}
                         </p>
                       </div>
                       
                       <div>
                         <p className="text-xs text-gray-500">Net Salary</p>
                         <p className="text-xl font-bold text-gray-900">
-                          ${staff.net_salary?.toLocaleString() || '0'}
+                          Rs{staff.net_salary?.toLocaleString() || '0'}
                         </p>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex flex-col">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">                    <div className="flex flex-col">
                       <span className="text-xs text-gray-500">Hourly Rate</span>
                       <span className="text-sm font-medium text-gray-900">
-                        ${staff.hourly_rate || '0'}/hour
+                        Rs{staff.hourly_rate || '0'}/hour
                       </span>
                     </div>
                     
@@ -978,18 +976,16 @@ const StaffProfile = () => {
                         {staff.payment_schedule || 'Monthly'}
                       </span>
                     </div>
-                    
-                    <div className="flex flex-col">
+                      <div className="flex flex-col">
                       <span className="text-xs text-gray-500">Bonus</span>
                       <span className="text-sm font-medium text-gray-900">
-                        ${staff.bonus?.toLocaleString() || '0'}
+                        Rs{staff.bonus?.toLocaleString() || '0'}
                       </span>
                     </div>
-                    
-                    <div className="flex flex-col">
+                      <div className="flex flex-col">
                       <span className="text-xs text-gray-500">Deductions</span>
                       <span className="text-sm font-medium text-gray-900">
-                        ${staff.deductions?.toLocaleString() || '0'}
+                        Rs{staff.deductions?.toLocaleString() || '0'}
                       </span>
                     </div>
                   </div>

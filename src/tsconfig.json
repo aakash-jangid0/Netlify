@@ -5,10 +5,5 @@
       "@/*": ["./*"]
     }
   },
-  "extends": "../tsconfig.json",
-  "exclude": [
-    "**/*.js",
-    "**/diagnosticService.js",
-    "utils/diagnosticService.js"
-  ]
+  "extends": "../tsconfig.json"
 }

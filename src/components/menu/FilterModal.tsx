@@ -26,8 +26,7 @@ interface FilterModalProps {
   setDietaryTags: (tags: string[]) => void;
 }
 
-const spiceLevelOptions = ['Mild', 'Medium', 'Hot', 'Extra Hot'];
-const dietaryOptions = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free'];
+// Sort options only - spice level and dietary preferences removed
 const sortOptions = [
   { value: 'popular', label: 'Most Popular' },
   { value: 'priceAsc', label: 'Price: Low to High' },
@@ -45,10 +44,6 @@ function FilterModal({
   setSelectedCategories,
   sortBy,
   setSortBy,
-  spiceLevels,
-  setSpiceLevels,
-  dietaryTags,
-  setDietaryTags,
 }: FilterModalProps) {
   // Use the categories hook to get dynamic categories from the database
   const { categories } = useCategories();
@@ -61,21 +56,7 @@ function FilterModal({
     }
   };
 
-  const handleSpiceLevelToggle = (level: string) => {
-    if (spiceLevels.includes(level)) {
-      setSpiceLevels(spiceLevels.filter(l => l !== level));
-    } else {
-      setSpiceLevels([...spiceLevels, level]);
-    }
-  };
-
-  const handleDietaryToggle = (tag: string) => {
-    if (dietaryTags.includes(tag)) {
-      setDietaryTags(dietaryTags.filter(t => t !== tag));
-    } else {
-      setDietaryTags([...dietaryTags, tag]);
-    }
-  };
+  // Handlers for spice level and dietary preferences removed
 
   return (
     <AnimatePresence>
@@ -130,7 +111,7 @@ function FilterModal({
                     onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                     className="w-full"
                   />
-                  <span className="text-sm">₹{priceRange[1]}</span>
+                  <span className="text-sm">Rs{priceRange[1]}</span>
                 </div>
               </div>
 
@@ -155,45 +136,7 @@ function FilterModal({
                 </div>
               </div>
 
-              {/* Spice Level */}
-              <div>
-                <h3 className="font-medium mb-3">Spice Level</h3>
-                <div className="flex flex-wrap gap-2">
-                  {spiceLevelOptions.map(level => (
-                    <button
-                      key={level}
-                      onClick={() => handleSpiceLevelToggle(level)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                        spiceLevels.includes(level)
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {level}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Dietary Preferences */}
-              <div>
-                <h3 className="font-medium mb-3">Dietary Preferences</h3>
-                <div className="flex flex-wrap gap-2">
-                  {dietaryOptions.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => handleDietaryToggle(tag)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                        dietaryTags.includes(tag)
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Spice Level and Dietary Preferences sections removed */}
             </div>
 
             <div className="sticky bottom-0 bg-white p-4 border-t">

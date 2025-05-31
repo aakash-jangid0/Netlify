@@ -1,6 +1,7 @@
 import { OrderItem } from '../types/orders';
 import { Invoice } from '../types/invoice';
-import { generateInvoice, saveInvoiceToDatabase, printInvoice } from './invoiceGenerator';
+import { generateInvoice, saveInvoiceToDatabase } from './invoiceGenerator';
+import { printInvoice } from './invoiceUtils';
 import { toast } from 'react-hot-toast';
 
 /**
@@ -35,11 +36,14 @@ export const generateAndProcessInvoice = async (
         tax_amount: item.price * item.quantity * 0.18,
         total: item.price * item.quantity * 1.18 // Include tax in total
       })),
-      subtotal,
-      tax_amount: tax,
+      subtotal,      tax_amount: tax,
       total,
       paymentMethod: paymentMethod || 'cash',
-      date: new Date()
+      date: new Date(),
+      coupon_code: order.coupon_code,
+      coupon_discount_type: order.coupon_discount_type,
+      coupon_discount_value: order.coupon_discount_value,
+      coupon_discount_amount: order.coupon_discount_amount
     };
 
     // First, save the invoice to the database
@@ -96,6 +100,10 @@ export const convertDatabaseInvoiceToGeneratorFormat = (invoice: any) => {
     tax_amount: invoice.tax_amount,
     total: invoice.total_amount,
     paymentMethod: invoice.payment_method || 'Cash',
-    date: new Date(invoice.invoice_date)
+    date: new Date(invoice.invoice_date),
+    coupon_code: invoice.coupon_code,
+    coupon_discount_type: invoice.coupon_discount_type,
+    coupon_discount_value: invoice.coupon_discount_value,
+    coupon_discount_amount: invoice.coupon_discount_amount
   };
 };

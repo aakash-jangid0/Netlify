@@ -104,10 +104,10 @@ export default function PayrollManagement({
                 </div>
                 <div className="mt-2 space-y-1">
                   <p className="text-sm">
-                    Base Salary: ₹{record.base_salary.toLocaleString()}
+                    Base Salary: Rs{record.base_salary.toLocaleString()}
                   </p>
                   <p className="text-sm">
-                    Hourly Rate: ₹{record.hourly_rate.toLocaleString()}/hr
+                    Hourly Rate: Rs{record.hourly_rate.toLocaleString()}/hr
                   </p>
                   <p className="text-sm">
                     Payment Schedule: {record.payment_schedule}
@@ -162,7 +162,7 @@ export default function PayrollManagement({
                 {Object.entries(record.allowances).map(([key, value]) => (
                   <div key={key} className="flex justify-between text-sm">
                     <span className="text-gray-600">{key}</span>
-                    <span>₹{(value as number).toLocaleString()}</span>
+                    <span>Rs{(value as number).toLocaleString()}</span>
                   </div>
                 ))}
               </div>
@@ -172,7 +172,7 @@ export default function PayrollManagement({
                 {Object.entries(record.deductions).map(([key, value]) => (
                   <div key={key} className="flex justify-between text-sm">
                     <span className="text-gray-600">{key}</span>
-                    <span>₹{(value as number).toLocaleString()}</span>
+                    <span>Rs{(value as number).toLocaleString()}</span>
                   </div>
                 ))}
               </div>

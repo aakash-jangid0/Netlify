@@ -8,5 +8,4 @@ export const SORT_OPTIONS = [
   { value: 'nameDesc', label: 'Name: Z to A' },
 ];
 
-export const SPICE_LEVELS = ['Mild', 'Medium', 'Hot', 'Extra Hot'];
-export const DIETARY_OPTIONS = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free'];
+// Removed spice levels and dietary options

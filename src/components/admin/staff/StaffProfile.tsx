@@ -618,19 +618,18 @@ export default function StaffProfile() {
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-500">Base Salary</p>
-                          <p className="flex items-center gap-1">
+                          <p className="text-sm text-gray-500">Base Salary</p>                          <p className="flex items-center gap-1">
                             <DollarSign className="h-4 w-4 text-gray-400" />
-                            {staff.base_salary ? `$${staff.base_salary}` : 'N/A'}
+                            {staff.base_salary ? `Rs${staff.base_salary}` : 'N/A'}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">Hourly Rate</p>
                           <p className="flex items-center gap-1">
                             <Clock className="h-4 w-4 text-gray-400" />
-                            {staff.hourly_rate ? `$${staff.hourly_rate}/hr` : 'N/A'}
+                            {staff.hourly_rate ? `Rs${staff.hourly_rate}/hr` : 'N/A'}
                           </p>
-                        </div>                        <div className="md:col-span-2">
+                        </div><div className="md:col-span-2">
                           <p className="text-sm text-gray-500">Skills</p>
                           <p>{Array.isArray(staff.skills) && staff.skills.length > 0 ? staff.skills.join(', ') : 'N/A'}</p>
                         </div>

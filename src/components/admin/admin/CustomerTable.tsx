@@ -124,7 +124,7 @@ export default function CustomerTable({
               
               <div className="mt-4">
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Total Spent:</span> ₹{customer.total_spent.toFixed(2)}
+                  <span className="font-medium">Total Spent:</span> Rs{customer.total_spent.toFixed(2)}
                 </p>
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">Last Visit:</span> {customer.last_visit ? new Date(customer.last_visit).toLocaleDateString() : 'Never'}
@@ -238,7 +238,7 @@ export default function CustomerTable({
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  ₹{customer.total_spent.toFixed(2)}
+                  Rs{customer.total_spent.toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {customer.last_visit ? new Date(customer.last_visit).toLocaleDateString() : 'Never'}

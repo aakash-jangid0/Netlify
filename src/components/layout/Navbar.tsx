@@ -3,11 +3,13 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, User, Menu as MenuIcon, LogOut, Clock, X } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function Navbar() {
   const { cartItems } = useCart();
   const { user, signOut } = useAuth();
+  const { settings } = useWebsiteSettings();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,8 +60,17 @@ function Navbar() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Link to="/" className="text-2xl font-bold text-orange-500">
-              TastyBites
+            <Link to="/" className="flex items-center gap-3">
+              {settings.logo_url && (
+                <img 
+                  src={settings.logo_url} 
+                  alt={settings.site_name} 
+                  className="h-8 w-8 object-contain"
+                />
+              )}
+              <span className="text-2xl font-bold text-orange-500">
+                {settings.site_name || 'TastyBites'}
+              </span>
             </Link>
           </motion.div>
 

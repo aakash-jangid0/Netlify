@@ -39,6 +39,16 @@ const orderSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  coupon: {
+    id: String,
+    code: String,
+    discount_type: {
+      type: String,
+      enum: ['percentage', 'fixed_amount']
+    },
+    discount_value: Number,
+    discount_amount: Number
   }
 });
 

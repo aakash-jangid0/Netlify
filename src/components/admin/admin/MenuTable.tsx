@@ -52,7 +52,7 @@ function MenuTable({ items, onEdit, onDelete, onToggleAvailability, selectedCate
                   </td>
                   <td className="px-6 py-4">{item.name}</td>
                   <td className="px-6 py-4 capitalize">{item.category}</td>
-                  <td className="px-6 py-4">₹{item.price}</td>
+                  <td className="px-6 py-4">Rs{item.price}</td>
                   <td className="px-6 py-4">
                     <motion.span
                       whileHover={{ scale: 1.05 }}

@@ -195,8 +195,20 @@ function OrderHistory() {
                     </div>
                     <div className="mt-4 md:mt-0 flex items-center space-x-4">
                       <span className="text-lg font-semibold">
-                        ₹{order.total_amount.toFixed(2)}
+                        Rs{order.total_amount.toFixed(2)}
                       </span>
+                      {order.coupon_code && (
+                        <div className="flex items-center text-sm text-green-600">
+                          <span className="mr-2">Applied Coupon:</span>
+                          <span className="font-medium">{order.coupon_code}</span>
+                          <span className="mx-1">-</span>
+                          <span>
+                            {order.coupon_discount_type === 'percentage'
+                              ? `${order.coupon_discount_value}% off`
+                              : `Rs${order.coupon_discount_amount} off`}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -209,24 +221,6 @@ function OrderHistory() {
                         <Package className="w-4 h-4 mr-1" />
                         Track Order
                       </Link>
-
-                      <button
-                        onClick={() => handleViewInvoice(order.id)}
-                        className="text-blue-500 hover:text-blue-600 font-medium flex items-center"
-                        disabled={loadingInvoices[order.id]}
-                      >
-                        {loadingInvoices[order.id] ? (
-                          <span className="flex items-center">
-                            <div className="animate-spin h-4 w-4 mr-1 border-b-2 border-blue-500 rounded-full"></div>
-                            Loading...
-                          </span>
-                        ) : (
-                          <>
-                            <FileText className="w-4 h-4 mr-1" />
-                            View Bill
-                          </>
-                        )}
-                      </button>
 
                       <button
                         onClick={() => handleDownloadInvoice(order.id)}
@@ -296,7 +290,7 @@ function OrderHistory() {
                                 )}
                               </div>
                               <div className="text-right">
-                                <p className="font-medium">₹{item.price.toFixed(2)}</p>
+                                <p className="font-medium">Rs{item.price.toFixed(2)}</p>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();

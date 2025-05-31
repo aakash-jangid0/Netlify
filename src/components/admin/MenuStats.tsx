@@ -27,7 +27,7 @@ function MenuStats({ items }: MenuStatsProps) {
     },
     {
       label: 'Average Price',
-      value: `₹${averagePrice.toFixed(2)}`,
+      value: `Rs${averagePrice.toFixed(2)}`,
       icon: DollarSign,
       color: 'bg-purple-500',
     },

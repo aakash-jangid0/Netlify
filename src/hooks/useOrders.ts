@@ -23,6 +23,13 @@ interface CreateOrderParams {
   orderType: 'dine-in' | 'takeaway';
   paymentMethod: 'cash' | 'card' | 'upi' | 'razorpay' | 'pending';
   user_id?: string; // Added user_id property to fix type error
+  coupon?: {
+    id: number;
+    code: string;
+    discount_type: 'percentage' | 'fixed_amount';
+    discount_value: number;
+    discount_amount: number;
+  } | null;
 }
 
 export function useOrders() {

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Download, Mail, Printer, Calendar, DollarSign, FileText, ChevronDown, Edit, Save, X } from 'lucide-react';
+import { Search, Filter, Download, Mail, Printer, Calendar, DollarSign, FileText, ChevronDown, Edit, Save, X, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Invoice } from '../../types/invoice';
 import { generatePDF, downloadInvoice, emailInvoice, printInvoice, viewOrDownloadInvoice } from '../../utils/invoiceUtils';
@@ -265,6 +266,13 @@ export default function InvoiceManagement() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Invoice Management</h1>
         <div className="flex gap-4 flex-wrap">
+          <Link
+            to="/admin/invoice-settings"
+            className="px-4 py-2 bg-orange-500 text-white rounded-lg flex items-center gap-2 hover:bg-orange-600 transition-colors"
+          >
+            <Settings className="w-5 h-5" />
+            Customize Templates
+          </Link>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input

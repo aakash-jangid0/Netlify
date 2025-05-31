@@ -35,7 +35,7 @@ function StatCard({ title, value, icon: Icon, trend, color, subtitle }: StatCard
       <h3 className="text-gray-500 text-sm mb-1">{title}</h3>
       <p className="text-2xl font-bold mb-1">
         {title.toLowerCase().includes('revenue') 
-          ? `₹${value.toLocaleString()}`
+          ? `Rs${value.toLocaleString()}`
           : value.toLocaleString()}
       </p>
       {subtitle && (

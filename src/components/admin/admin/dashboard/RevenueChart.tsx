@@ -23,7 +23,7 @@ function RevenueChart({ data, title, period }: RevenueChartProps) {
         <div className="bg-white p-4 rounded-lg shadow-lg border">
           <p className="text-gray-600">{label}</p>
           <p className="text-lg font-semibold text-orange-500">
-            ₹{payload[0].value.toLocaleString()}
+            Rs{payload[0].value.toLocaleString()}
           </p>
         </div>
       );

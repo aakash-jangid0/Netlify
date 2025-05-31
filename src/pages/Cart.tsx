@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Minus, Plus, Trash2, ArrowLeft, IndianRupee, CreditCard, Wallet, ShoppingBag } from 'lucide-react';
+import { Minus, Plus, Trash2, ArrowLeft, IndianRupee, CreditCard, Wallet, ShoppingBag, Tag, X, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,41 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import NetworkErrorAlert from '../components/ui/NetworkErrorAlert';
 import { generateAndProcessInvoice } from '../utils/orderInvoiceUtils';
 import { supabase } from '../lib/supabase';
+
+// Interface for coupon data
+interface CouponData {
+  id: number;
+  code: string;
+  discount_type: 'percentage' | 'fixed_amount';
+  discount_value: number;
+  min_order_amount: number | null;
+  max_discount_amount: number | null;
+}
+
+// Utility function to increment coupon usage count
+const incrementCouponUsage = async (couponId: number): Promise<void> => {
+  try {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const response = await fetch(`${API_URL}/coupons/${couponId}/increment-usage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      console.error('Failed to increment coupon usage:', response.statusText);
+      // Don't throw an error here as we don't want to break the order flow
+      // if coupon increment fails - just log it
+    } else {
+      console.log(`Successfully incremented usage for coupon ID: ${couponId}`);
+    }
+  } catch (error) {
+    console.error('Error incrementing coupon usage:', error);
+    // Don't throw an error here as we don't want to break the order flow
+  }
+};
 
 function Cart() {
   const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -31,10 +66,33 @@ function Cart() {
     amount: number;
     orderId: string;
   }>();
+  
+  // Coupon related states
+  const [couponCode, setCouponCode] = useState<string>('');
+  const [couponLoading, setCouponLoading] = useState<boolean>(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponData | null>(null);
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.18; // 18% tax
-  const total = subtotal + tax;
+  
+  // Calculate discount amount if coupon is applied
+  const discountAmount = appliedCoupon 
+    ? appliedCoupon.discount_type === 'percentage' 
+      ? Math.min(
+          subtotal * (appliedCoupon.discount_value / 100), 
+          appliedCoupon.max_discount_amount || Infinity
+        )
+      : appliedCoupon.discount_value
+    : 0;
+  
+  // Apply minimum order amount check
+  const discountedSubtotal = subtotal - (
+    appliedCoupon && subtotal >= (appliedCoupon.min_order_amount || 0) 
+      ? discountAmount 
+      : 0
+  );
+  
+  const tax = discountedSubtotal * 0.18; // 18% tax
+  const total = discountedSubtotal + tax;
 
   const handleQuantityChange = (id: string, newQuantity: number) => {
     if (newQuantity === 0) {
@@ -231,6 +289,16 @@ function Cart() {
         orderId: finalOrderId
       });
       
+      // Increment coupon usage if a coupon was applied
+      if (appliedCoupon) {
+        try {
+          await incrementCouponUsage(appliedCoupon.id);
+        } catch (error) {
+          console.error('Error incrementing coupon usage:', error);
+          // Don't block the order completion flow if coupon usage increment fails
+        }
+      }
+      
       clearCart();
       
       // Close payment modal and show success modal
@@ -340,7 +408,7 @@ function Cart() {
                     />
                     <div className="flex-1">
                       <h3 className="font-medium">{item.name}</h3>
-                      <p className="text-gray-500">₹{item.price}</p>
+                      <p className="text-gray-500">Rs{item.price}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <motion.button
@@ -423,22 +491,118 @@ function Cart() {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </div>                    {/* Coupon Section */}
+                    <div className="mb-4">
+                      <div className="flex gap-2 mb-2">
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            placeholder="Enter coupon code"
+                            disabled={appliedCoupon !== null || couponLoading}
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-100"
+                          />
+                        </div>
+                        <button
+                          onClick={async () => {
+                            if (!couponCode) return;
+                            setCouponLoading(true);
+                            try {
+                              const { data: coupon, error } = await supabase
+                                .from('coupons')
+                                .select('*')
+                                .eq('code', couponCode.toUpperCase())
+                                .eq('is_active', true)
+                                .single();
+                              
+                              if (error) throw error;
+                              if (!coupon) throw new Error('Coupon not found');
+                              
+                              // Check if coupon is expired
+                              if (new Date(coupon.expiry_date) < new Date()) {
+                                toast.error('This coupon has expired');
+                                return;
+                              }
+                              
+                              // Check minimum order amount
+                              if (coupon.min_order_amount && subtotal < coupon.min_order_amount) {
+                                toast.error(`Minimum order amount for this coupon is Rs${coupon.min_order_amount}`);
+                                return;
+                              }
+                              
+                              // Check if coupon has reached its usage limit
+                              if (coupon.usage_limit && coupon.usage_count >= coupon.usage_limit) {
+                                toast.error('This coupon has reached its usage limit');
+                                return;
+                              }
+                              
+                              setAppliedCoupon(coupon);
+                              setCouponCode('');
+                              toast.success('Coupon applied successfully!');
+                            } catch (error: any) {
+                              console.error('Error applying coupon:', error);
+                              toast.error(error.message || 'Invalid coupon code');
+                            } finally {
+                              setCouponLoading(false);
+                            }
+                          }}
+                          disabled={!couponCode || couponLoading || appliedCoupon !== null}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            !couponCode || couponLoading || appliedCoupon !== null
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : 'bg-orange-500 text-white hover:bg-orange-600'
+                          }`}
+                        >
+                          {couponLoading ? <LoadingSpinner size="small" color="orange" /> : 'Apply'}
+                        </button>
+                      </div>
 
-                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-100 space-y-3 mb-6">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-700">Subtotal</span>
-                      <span>₹{subtotal.toFixed(2)}</span>
+                      {appliedCoupon && (
+                        <div className="bg-green-50 p-3 rounded-lg border border-green-100 mb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                              <span className="text-sm font-medium text-green-800">
+                                {appliedCoupon.code} - {appliedCoupon.discount_type === 'percentage' 
+                                  ? `${appliedCoupon.discount_value}% off` 
+                                  : `Rs${appliedCoupon.discount_value} off`}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setAppliedCoupon(null);
+                                toast.success('Coupon removed');
+                              }}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-700">Tax (18%)</span>
-                      <span>₹{tax.toFixed(2)}</span>
+
+                    <div className="bg-orange-50 p-4 rounded-lg border border-orange-100 space-y-3 mb-6">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Subtotal</span>
+                        <span>Rs{subtotal.toFixed(2)}</span>
+                      </div>
+                      {appliedCoupon && (
+                        <div className="flex justify-between text-sm text-green-600">
+                          <span>Discount</span>
+                          <span>-Rs{discountAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">Tax (18%)</span>
+                        <span>Rs{tax.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-lg font-bold pt-3 border-t border-orange-200 text-gray-900">
+                        <span>Total</span>
+                        <span>Rs{total.toFixed(2)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-lg font-bold pt-3 border-t border-orange-200 text-gray-900">
-                      <span>Total</span>
-                      <span>₹{total.toFixed(2)}</span>
-                    </div>
-                  </div>
 
                   {/* Payment preference section removed to simplify checkout process */}
 
@@ -500,6 +664,14 @@ function Cart() {
                 customerName: user?.user_metadata?.name || user?.email || 'Guest',
                 tableNumber: orderType === 'dine-in' ? tableNumber : undefined,
                 orderType,
+                // Include coupon information if a coupon is applied
+                coupon: appliedCoupon ? {
+                  id: appliedCoupon.id,
+                  code: appliedCoupon.code,
+                  discount_type: appliedCoupon.discount_type,
+                  discount_value: appliedCoupon.discount_value,
+                  discount_amount: discountAmount
+                } : null,
                 // Set payment method based on the current payment flow
                 paymentMethod: 'pending' as any // Initially set as pending, will be updated after payment
               });

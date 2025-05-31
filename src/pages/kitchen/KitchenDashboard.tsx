@@ -500,7 +500,7 @@ function KitchenDashboard() {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <div className="text-sm font-medium text-gray-900">₹{order.total_amount.toFixed(2)}</div>
+                          <div className="text-sm font-medium text-gray-900">Rs{order.total_amount.toFixed(2)}</div>
                           <div className="flex items-center justify-end gap-1">
                             <span className={`h-2 w-2 rounded-full ${
                               order.payment_status === 'paid' ? 'bg-emerald-500' : 

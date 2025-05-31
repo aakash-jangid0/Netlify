@@ -96,13 +96,12 @@ export default function CustomerAnalytics({ customers = [] }: CustomerAnalyticsP
   };
   
   // Calculate spent amount distribution
-  const getSpendingDistributionData = () => {
-    const ranges = [
-      { name: '₹0', min: 0, max: 0 },
-      { name: '₹1-500', min: 1, max: 500 },
-      { name: '₹501-1000', min: 501, max: 1000 },
-      { name: '₹1001-2000', min: 1001, max: 2000 },
-      { name: '₹2000+', min: 2001, max: Infinity }
+  const getSpendingDistributionData = () => {    const ranges = [
+      { name: 'Rs0', min: 0, max: 0 },
+      { name: 'Rs1-500', min: 1, max: 500 },
+      { name: 'Rs501-1000', min: 501, max: 1000 },
+      { name: 'Rs1001-2000', min: 1001, max: 2000 },
+      { name: 'Rs2000+', min: 2001, max: Infinity }
     ];
     
     const spendingData = ranges.map(range => {
@@ -367,9 +366,8 @@ export default function CustomerAnalytics({ customers = [] }: CustomerAnalyticsP
             <div className="flex items-center text-green-500 mb-2">
               <DollarSign className="w-5 h-5 mr-2" />
               <span className="font-medium">Revenue Growth</span>
-            </div>
-            <p className="text-sm text-gray-600">
-              Average spend per customer: ₹{averageSpend}
+            </div>            <p className="text-sm text-gray-600">
+              Average spend per customer: Rs{averageSpend}
             </p>
           </div>
           

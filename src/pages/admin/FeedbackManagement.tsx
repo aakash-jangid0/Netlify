@@ -365,7 +365,7 @@ const FeedbackManagement = () => {
                           <div className="text-sm text-gray-900">#{feedback.order_id.slice(-6)}</div>
                           {feedback.order?.total_amount && (
                             <div className="text-xs text-gray-500">
-                              ₹{feedback.order.total_amount.toFixed(2)}
+                              Rs{feedback.order.total_amount.toFixed(2)}
                             </div>
                           )}
                         </td>

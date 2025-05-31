@@ -5,11 +5,10 @@ import * as XLSX from 'xlsx';
 export class CustomerExportService {  static exportToCSV(customers: Customer[]): void {
     const csvData = customers.map(customer => ({
       Name: customer.name,
-      Email: customer.email,
-      Phone: customer.phone,
+      Email: customer.email,      Phone: customer.phone,
       'Joined Date': new Date(customer.created_at).toLocaleDateString(),
       'Total Orders': customer.total_orders,
-      'Total Spent': `₹${customer.total_spent.toFixed(2)}`,
+      'Total Spent': `Rs.${customer.total_spent.toFixed(2)}`,
       Status: customer.status
     }));
 
