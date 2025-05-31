@@ -2,10 +2,21 @@ import { OrderItem } from '../types/orders'; // Fixed import path
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 
-export const calculateOrderTotals = (items: OrderItem[] = []) => {
+interface CouponData {
+  id: number;
+  code: string;
+  discount_type: 'percentage' | 'fixed_amount';
+  discount_value: number;
+  max_discount_amount: number | null;
+}
+
+export const calculateOrderTotals = (
+  items: OrderItem[] = [], 
+  coupon: CouponData | null = null
+) => {
   // Guard against null or undefined items
   if (!items || !Array.isArray(items)) {
-    return { subtotal: 0, tax: 0, total: 0 };
+    return { subtotal: 0, discount: 0, tax: 0, total: 0 };
   }
   
   const subtotal = items.reduce((sum, item) => {
@@ -17,11 +28,25 @@ export const calculateOrderTotals = (items: OrderItem[] = []) => {
     return sum + (itemPrice * itemQuantity);
   }, 0);
 
-  const tax = subtotal * 0.18; // 18% tax
-  const total = subtotal + tax;
+  // Calculate discount if coupon is applied
+  const discount = coupon ? (() => {
+    if (coupon.discount_type === 'percentage') {
+      const discountAmount = (subtotal * coupon.discount_value) / 100;
+      return coupon.max_discount_amount 
+        ? Math.min(discountAmount, coupon.max_discount_amount)
+        : discountAmount;
+    } else {
+      return Math.min(coupon.discount_value, subtotal); // Don't allow discount greater than subtotal
+    }
+  })() : 0;
+
+  const discountedSubtotal = subtotal - discount;
+  const tax = discountedSubtotal * 0.18; // 18% tax
+  const total = discountedSubtotal + tax;
 
   return {
     subtotal,
+    discount,
     tax,
     total
   };
@@ -37,7 +62,7 @@ export const generateOrderId = () => {
 };
 
 export const formatCurrency = (amount: number = 0) => {
-  return `₹${amount.toFixed(2)}`;
+  return `Rs.${amount.toFixed(2)}`;
 };
 
 /**

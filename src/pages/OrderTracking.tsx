@@ -37,6 +37,10 @@ interface TrackingOrder {
   payment_status: string;
   has_feedback?: boolean;
   invoice_id?: string; // Add invoice_id to support direct invoice retrieval
+  coupon_code?: string;
+  coupon_discount_type?: 'percentage' | 'fixed_amount';
+  coupon_discount_value?: number;
+  coupon_discount_amount?: number;
 }
 
 const statusSteps = [
@@ -195,8 +199,8 @@ function OrderTracking() {
         
         // Use the same invoice generator as used during order creation
         const invoiceGenerator = await import('../utils/invoiceGenerator');
-        const doc = invoiceGenerator.generateInvoice(invoiceData);
-        window.open(doc.output('bloburl'));
+        const doc = await invoiceGenerator.generateInvoice(invoiceData);
+        window.open(await doc.output('bloburl'));
       }
     } catch (error) {
       console.error('Error viewing invoice:', error);
@@ -242,7 +246,8 @@ function OrderTracking() {
         
         // Use the same invoice generator as used during order creation
         const invoiceGenerator = await import('../utils/invoiceGenerator');
-        invoiceGenerator.downloadInvoice(invoiceData);
+        const invoiceUtils = await import('../utils/invoiceUtils');
+        invoiceUtils.downloadInvoice(invoiceData);
       }
       
       toast.success('Invoice downloaded successfully');
@@ -362,7 +367,7 @@ function OrderTracking() {
               <InfoCard
                 icon={DollarSign}
                 label="Total"
-                value={`₹${order.total_amount.toFixed(2)}`}
+                value={`Rs${order.total_amount.toFixed(2)}`}
               />
             </div>
 
@@ -489,44 +494,43 @@ function OrderTracking() {
                             )}
                           </div>
                         </div>
-                        <span className="font-medium">₹{(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="font-medium">Rs{(item.price * item.quantity).toFixed(2)}</span>
                       </motion.div>
                     ))}
 
                     <div className="border-t pt-4 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Subtotal</span>
-                        <span>₹{order.total_amount.toFixed(2)}</span>
+                        <span>Rs{order.total_amount.toFixed(2)}</span>
+                      </div>
+                      {order.coupon_code && (
+                        <div className="flex justify-between text-sm text-green-600">
+                          <div className="flex items-center">
+                            <span>Applied Coupon: {order.coupon_code}</span>
+                          </div>
+                          <span>
+                            -
+                            {order.coupon_discount_type === 'percentage'
+                              ? `${order.coupon_discount_value}%`
+                              : `Rs${order.coupon_discount_amount}`}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Subtotal</span>
+                        <span>Rs{order.total_amount.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Tax (18%)</span>
-                        <span>₹{(order.total_amount * 0.18).toFixed(2)}</span>
+                        <span>Rs{(order.total_amount * 0.18).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between font-semibold text-lg pt-2 border-t">
                         <span>Total</span>
-                        <span>₹{(order.total_amount * 1.18).toFixed(2)}</span>
+                        <span>Rs{(order.total_amount * 1.18).toFixed(2)}</span>
                       </div>
 
                       {/* Invoice Actions */}
                       <div className="pt-4 flex flex-wrap gap-3">
-                        <button
-                          onClick={handleViewInvoice}
-                          className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                          disabled={loadingInvoice}
-                        >
-                          {loadingInvoice ? (
-                            <span className="flex items-center">
-                              <div className="animate-spin h-4 w-4 mr-1 border-b-2 border-white rounded-full"></div>
-                              Loading...
-                            </span>
-                          ) : (
-                            <>
-                              <FileText className="w-4 h-4" />
-                              View Bill
-                            </>
-                          )}
-                        </button>
-                        
                         <button
                           onClick={handleDownloadInvoice}
                           className="flex items-center gap-2 px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"

@@ -23,7 +23,7 @@ export default function CustomerStatsComponent({ stats }: CustomerStatsProps) {
     },
     {
       title: 'Average Spend',
-      value: `₹${stats.averageSpend.toFixed(2)}`,
+      value: `Rs${stats.averageSpend.toFixed(2)}`,
       icon: <DollarSign className="w-5 h-5 text-orange-500" />,
       color: 'bg-orange-50 border-orange-100',
     },

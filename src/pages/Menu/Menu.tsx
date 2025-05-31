@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { useScroll, useSpring, useTransform } from 'framer-motion';
 import { motion } from 'framer-motion';
-import PageTransition from '../../components/PageTransition';
+import PageTransition from '../../components/layout/PageTransition';
 import MenuHeader from './components/MenuHeader';
 import MenuGrid from './components/MenuGrid';
 import CategorySidebar from './components/CategorySidebar';
-import FilterModal from '../../components/FilterModal';
+import FilterModal from '../../components/menu/FilterModal';
 import { useMenuFilters } from './hooks/useMenuFilters';
 import { useMenuItems } from './hooks/useMenuItems';
 

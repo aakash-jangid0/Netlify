@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, useSearchParams, Navigate, useL
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { WebsiteSettingsProvider } from './contexts/WebsiteSettingsContext';
 import Layout from './components/layout/Layout';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import NetworkStatus from './components/common/NetworkStatus.jsx';
@@ -33,11 +34,14 @@ import MenuManagement from './pages/admin/MenuManagement';
 import OrderManagement from './pages/admin/OrderManagement';
 import QRCodeManagement from './pages/admin/QRCodeManagement';
 import InvoiceManagement from './pages/admin/InvoiceManagement';
+import InvoiceTemplateSettings from './pages/admin/InvoiceTemplateSettings';
 import InventoryManagement from './pages/admin/InventoryManagement';
 import StaffManagement from './pages/admin/StaffManagement';
 import StaffProfile from './pages/admin/StaffProfile';
 import CustomerManagement from './pages/admin/CustomerManagement';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
+import CouponManagement from './pages/admin/CouponManagement';
+import WebsiteSettingsComprehensive from './pages/admin/WebsiteSettingsComprehensive';
 
 
 export default function App() {
@@ -46,43 +50,48 @@ export default function App() {
       <NetworkStatus />
       <AuthProvider>
         <CartProvider>
-          <Router>
-            <Toaster position="top-right" />
-            <DiagnosticRedirect />
-            <Routes>
-              {/* Diagnostics Page - No Layout */}
-              <Route path="/diagnostics" element={<ErrorsPage />} />
-              
-              {/* Public Routes */}
-              <Route element={<Layout />}>
-                <Route path="/" element={<Home />} />
-                <Route path="/menu" element={<Menu />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/orders" element={<OrderHistory />} />
-                <Route path="/track/:orderId" element={<OrderTracking />} />
-              </Route>
+          <WebsiteSettingsProvider>
+            <Router>
+              <Toaster position="top-right" />
+              <DiagnosticRedirect />
+              <Routes>
+                {/* Diagnostics Page - No Layout */}
+                <Route path="/diagnostics" element={<ErrorsPage />} />
+                
+                {/* Public Routes */}
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/menu" element={<Menu />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/orders" element={<OrderHistory />} />
+                  <Route path="/track/:orderId" element={<OrderTracking />} />
+                </Route>
 
-              {/* Kitchen Dashboard */}
-              <Route path="/kitchen" element={<KitchenDashboard />} />
+                {/* Kitchen Dashboard */}
+                <Route path="/kitchen" element={<KitchenDashboard />} />
 
-              {/* Counter Dashboard */}
-              <Route path="/counter" element={<CounterDashboard />} />
+                {/* Counter Dashboard */}
+                <Route path="/counter" element={<CounterDashboard />} />
 
-              {/* Admin Dashboard */}
-              <Route path="/admin" element={<AdminDashboard />}>
-                <Route path="menu" element={<MenuManagement />} />
-                <Route path="orders" element={<OrderManagement />} />
-                <Route path="/admin/customers" element={<CustomerManagement />} />
-                <Route path="invoices" element={<InvoiceManagement />} />
-                <Route path="qr-codes" element={<QRCodeManagement />} />
-                <Route path="inventory" element={<InventoryManagement />} />
-                <Route path="staff" element={<StaffManagement />} />
-                <Route path="staff/:id" element={<StaffProfile />} />
-                <Route path="feedback" element={<FeedbackManagement />} />
-              </Route>
-            </Routes>
-          </Router>
+                {/* Admin Dashboard */}
+                <Route path="/admin" element={<AdminDashboard />}>
+                  <Route path="menu" element={<MenuManagement />} />
+                  <Route path="orders" element={<OrderManagement />} />
+                  <Route path="/admin/customers" element={<CustomerManagement />} />
+                  <Route path="invoices" element={<InvoiceManagement />} />
+                  <Route path="invoice-settings" element={<InvoiceTemplateSettings />} />
+                  <Route path="qr-codes" element={<QRCodeManagement />} />
+                  <Route path="inventory" element={<InventoryManagement />} />
+                  <Route path="staff" element={<StaffManagement />} />
+                  <Route path="staff/:id" element={<StaffProfile />} />
+                  <Route path="feedback" element={<FeedbackManagement />} />
+                  <Route path="coupons" element={<CouponManagement />} />
+                  <Route path="website" element={<WebsiteSettingsComprehensive />} />
+                </Route>
+              </Routes>
+            </Router>
+          </WebsiteSettingsProvider>
         </CartProvider>
       </AuthProvider>
     </ErrorBoundary>

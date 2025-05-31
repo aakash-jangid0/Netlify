@@ -107,7 +107,7 @@ export default function InventoryStats({ items }: InventoryStatsProps) {
           <div>
             <p className="text-sm text-gray-500">Total Value</p>
             <p className="text-2xl font-bold text-green-600">
-              ₹{stats.totalValue.toLocaleString()}
+              Rs{stats.totalValue.toLocaleString()}
             </p>
           </div>
           <div className="bg-green-100 p-3 rounded-lg">

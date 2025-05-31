@@ -3,8 +3,8 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Coffee, ClipboardList, QrCode, TrendingUp,
-  Users, DollarSign, Package, FileText, Settings, Store,
-  UserCog, Boxes, Heart, ChefHat, BarChart2, Megaphone,
+  Users, DollarSign, Package, FileText,
+  UserCog, Boxes, Heart, ChefHat,
   MessageSquare, Bell, Ticket, Globe
 } from 'lucide-react';
 import StatCard from '../../components/admin/dashboard/StatCard';
@@ -34,7 +34,6 @@ const orderStatusData = [
 function Dashboard() {
   const location = useLocation();
   const [selectedPeriod, setSelectedPeriod] = useState('daily');
-  const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalOrders: 156,
     totalRevenue: 45890,
@@ -45,11 +44,33 @@ function Dashboard() {
     lowStockItems: 8,
     pendingFeedback: 15
   });
-  const [notifications, setNotifications] = useState([]);
+  const [notifications] = useState([]);
 
   useEffect(() => {
+    const setupRealtimeSubscription = () => {
+      const subscription = supabase
+        .channel('dashboard_changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public' },
+          (payload) => {
+            // Handle real-time updates
+            if (payload.table === 'orders') {
+              fetchDashboardData();
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    };
+
     fetchDashboardData();
-    setupRealtimeSubscription();
+    const cleanup = setupRealtimeSubscription();
+    
+    return cleanup;
   }, []);
 
   const fetchDashboardData = async () => {
@@ -79,32 +100,10 @@ function Dashboard() {
         averageOrderValue: Math.round(averageOrderValue),
         pendingFeedback: feedbackCount || 0
       }));
-
-      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Failed to load dashboard data');
     }
-  };
-
-  const setupRealtimeSubscription = () => {
-    const subscription = supabase
-      .channel('dashboard_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public' },
-        (payload) => {
-          // Handle real-time updates
-          if (payload.table === 'orders') {
-            fetchDashboardData();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
   };
 
   const menuItems = [
@@ -114,13 +113,12 @@ function Dashboard() {
     { path: '/admin/inventory', icon: Boxes, label: 'Inventory' },
     { path: '/admin/staff', icon: UserCog, label: 'Staff' },
     { path: '/admin/customers', icon: Heart, label: 'Customers' },
-    { path: '/admin/analytics', icon: BarChart2, label: 'Analytics' },
     { path: '/admin/feedback', icon: MessageSquare, label: 'Feedback' },
     { path: '/admin/coupons', icon: Ticket, label: 'Coupons' },
     { path: '/admin/invoices', icon: FileText, label: 'Invoices' },
     { path: '/admin/website', icon: Globe, label: 'Website' },
     { path: '/admin/qr-codes', icon: QrCode, label: 'QR Codes' },
-    { path: '/admin/settings', icon: Settings, label: 'Settings' }
+
   ];
 
   return (

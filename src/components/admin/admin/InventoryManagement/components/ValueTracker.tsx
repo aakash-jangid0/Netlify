@@ -52,7 +52,7 @@ function ValueTracker({ items }: ValueTrackerProps) {
         <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
           <p className="font-medium">{label}</p>
           <p className="text-green-600 font-medium mt-1">
-            ₹{payload[0].value.toLocaleString()}
+            Rs{payload[0].value.toLocaleString()}
           </p>
         </div>
       );
@@ -73,7 +73,7 @@ function ValueTracker({ items }: ValueTrackerProps) {
           >
             <div>
               <p className="text-sm text-gray-600">Total Value</p>
-              <p className="text-2xl font-bold text-green-600">₹{stats.totalValue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-green-600">Rs{stats.totalValue.toLocaleString()}</p>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
               <DollarSign className="w-6 h-6 text-green-600" />
@@ -89,7 +89,7 @@ function ValueTracker({ items }: ValueTrackerProps) {
             <div>
               <p className="text-sm text-gray-600">Highest Value Category</p>
               <p className="text-lg font-semibold text-blue-600 capitalize">{stats.highestCategory[0]}</p>
-              <p className="text-sm text-blue-600">₹{stats.highestCategory[1].toLocaleString()}</p>
+              <p className="text-sm text-blue-600">Rs{stats.highestCategory[1].toLocaleString()}</p>
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
               <TrendingUp className="w-6 h-6 text-blue-600" />
@@ -105,7 +105,7 @@ function ValueTracker({ items }: ValueTrackerProps) {
             <div>
               <p className="text-sm text-gray-600">Lowest Value Category</p>
               <p className="text-lg font-semibold text-gray-600 capitalize">{stats.lowestCategory[0]}</p>
-              <p className="text-sm text-gray-600">₹{stats.lowestCategory[1].toLocaleString()}</p>
+              <p className="text-sm text-gray-600">Rs{stats.lowestCategory[1].toLocaleString()}</p>
             </div>
             <div className="bg-gray-200 p-3 rounded-full">
               <TrendingDown className="w-6 h-6 text-gray-600" />
@@ -128,7 +128,7 @@ function ValueTracker({ items }: ValueTrackerProps) {
                 tick={{ fontSize: 12 }}
               />
               <YAxis
-                tickFormatter={(value) => `₹${value.toLocaleString()}`}
+                tickFormatter={(value) => `Rs${value.toLocaleString()}`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Area

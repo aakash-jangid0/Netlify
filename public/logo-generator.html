@@ -1,0 +1,61 @@
+// HTML file to create a PNG logo from SVG for better compatibility
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logo Generator</title>
+</head>
+<body>
+    <h2>TastyBites Logo Generator</h2>
+    <canvas id="canvas" width="300" height="100" style="border: 1px solid #ccc;"></canvas>
+    <br><br>
+    <button onclick="downloadLogo()">Download PNG Logo</button>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create the logo programmatically
+        function drawLogo() {
+            // Background
+            ctx.fillStyle = '#f97316';
+            ctx.roundRect(0, 0, 300, 100, 10);
+            ctx.fill();
+            
+            // Main title
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('TastyBites', 150, 35);
+            
+            // Subtitle
+            ctx.font = '12px Arial';
+            ctx.fillText('Delicious Food, Every Time', 150, 55);
+            
+            // Location
+            ctx.font = '10px Arial';
+            ctx.fillText('Malad West, Mumbai Maharashtra', 150, 75);
+            
+            // Decorative elements
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.arc(30, 25, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(270, 75, 6, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+        
+        function downloadLogo() {
+            const link = document.createElement('a');
+            link.download = 'tastybites-logo.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Draw the logo when page loads
+        drawLogo();
+    </script>
+</body>
+</html>

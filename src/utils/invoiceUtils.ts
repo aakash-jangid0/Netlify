@@ -21,10 +21,7 @@ declare module 'jspdf' {
 }
 
 export const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR'
-  }).format(amount);
+  return 'Rs. ' + amount.toFixed(2);
 };
 
 export const generatePDF = (invoice: Invoice) => {
@@ -110,7 +107,7 @@ export const generatePDF = (invoice: Invoice) => {
   const footerY = pageHeight - 25;
   doc.text('Thank you for your business!', pageWidth / 2, footerY, { align: 'center' });
   doc.setFontSize(8);
-  doc.text('**SAVE PAPER SAVE NATURE !!', pageWidth / 2, footerY + 5, { align: 'center' });
+  doc.text('**SAVE PAPER SAVE NATURE !!**', pageWidth / 2, footerY + 5, { align: 'center' });
   doc.text(`TIME: ${format(new Date(), 'HH:mm')} | INVOICE GENERATED ON ${format(new Date(), 'dd/MM/yyyy')}`, pageWidth / 2, footerY + 10, { align: 'center' });
 
   return doc;
@@ -118,34 +115,58 @@ export const generatePDF = (invoice: Invoice) => {
 
 // We're now using the functions from invoiceGenerator.ts directly
 // These functions are kept for compatibility with existing code
-export const printInvoice = async (invoice: Invoice) => {
-  // Convert database invoice to the format expected by generateInvoiceDoc
-  const invoiceData = convertDatabaseInvoiceToGeneratorFormat(invoice);
+export const printInvoice = async (invoice: any) => {
+  // Handle both Invoice and invoiceData formats
+  let invoiceData;
+  
+  if (invoice.invoice_number) {
+    // It's a database Invoice type
+    invoiceData = convertDatabaseInvoiceToGeneratorFormat(invoice);
+  } else {
+    // It's already in the format expected by generateInvoiceDoc
+    invoiceData = invoice;
+  }
+  
   const doc = generateInvoiceDoc(invoiceData);
   
   if (typeof window !== 'undefined') {
-    doc.autoPrint();
+    const pdfDoc = await doc;
+    pdfDoc.autoPrint();
     
     // Open the PDF in a new window
-    const blobUrl = doc.output('bloburl');
+    const blobUrl = await pdfDoc.output('bloburl');
     const printWindow = window.open(blobUrl) as Window;
     
     if (!printWindow) {
       console.error('Browser blocked opening new window');
+      return;
     }
   }
 };
 
-export const downloadInvoice = (invoice: Invoice) => {
-  // Convert database invoice to the format expected by generateInvoiceDoc
-  const invoiceData = convertDatabaseInvoiceToGeneratorFormat(invoice);
+export const downloadInvoice = async (invoice: any) => {
+  // Handle both Invoice and invoiceData formats
+  let invoiceData;
+  let fileName;
+  
+  if (invoice.invoice_number) {
+    // It's a database Invoice type
+    invoiceData = convertDatabaseInvoiceToGeneratorFormat(invoice);
+    fileName = `invoice-${invoice.invoice_number}.pdf`;
+  } else {
+    // It's already in the format expected by generateInvoiceDoc
+    invoiceData = invoice;
+    fileName = `invoice-${invoice.invoiceNumber}.pdf`;
+  }
+  
   const doc = generateInvoiceDoc(invoiceData);
-  doc.save(`invoice-${invoice.invoice_number}.pdf`);
+  const pdfDoc = await doc;
+  await pdfDoc.save(fileName);
 };
 
 export const emailInvoice = async (invoice: Invoice, email: string) => {
   const doc = generatePDF(invoice);
-  const pdfBlob = doc.output('blob');
+  const pdfBlob = await doc.output('blob');
   
   const formData = new FormData();
   formData.append('invoice', pdfBlob, `invoice-${invoice.invoice_number}.pdf`);
@@ -251,12 +272,12 @@ export const viewOrDownloadInvoice = async (orderId: string, order: any, downloa
     const invoiceData = convertDatabaseInvoiceToGeneratorFormat(invoice);
     
     // Use the same invoice generator as when creating bills
-    const pdfDoc = generateInvoiceDoc(invoiceData);
+    const pdfDoc = await generateInvoiceDoc(invoiceData);
     
     if (download) {
-      pdfDoc.save(`invoice-${invoice.invoice_number}.pdf`);
+      await pdfDoc.save(`invoice-${invoice.invoice_number}.pdf`);
     } else {
-      pdfDoc.output('dataurlnewwindow');
+      await pdfDoc.output('dataurlnewwindow');
     }
   } else {
     // Generate a new invoice if not found in the database
@@ -290,23 +311,23 @@ export const viewOrDownloadInvoice = async (orderId: string, order: any, downloa
       console.log('Invoice saved to database with ID:', savedInvoiceId);
       
       // Generate the PDF using the same generator as when creating bills
-      const pdfDoc = generateInvoiceDoc(invoiceData);
+      const pdfDoc = await generateInvoiceDoc(invoiceData);
       
       if (download) {
-        pdfDoc.save(`invoice-${invoiceData.invoiceNumber}.pdf`);
+        await pdfDoc.save(`invoice-${invoiceData.invoiceNumber}.pdf`);
       } else {
-        pdfDoc.output('dataurlnewwindow');
+        await pdfDoc.output('dataurlnewwindow');
       }
     } catch (error) {
       console.error('Error processing invoice:', error);
       
       // Fall back to just generating the PDF without saving to database
-      const pdfDoc = generateInvoiceDoc(invoiceData);
+      const pdfDoc = await generateInvoiceDoc(invoiceData);
       
       if (download) {
-        pdfDoc.save(`invoice-${invoiceData.invoiceNumber}.pdf`);
+        await pdfDoc.save(`invoice-${invoiceData.invoiceNumber}.pdf`);
       } else {
-        pdfDoc.output('dataurlnewwindow');
+        await pdfDoc.output('dataurlnewwindow');
       }
     }
   }

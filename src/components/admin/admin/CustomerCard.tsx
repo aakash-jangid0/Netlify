@@ -47,7 +47,7 @@ export default function CustomerCard({ customer, onEdit, onStatusChange }: Custo
         </div>
         <div className="flex items-center text-sm text-gray-500">
           <ShoppingBag className="w-4 h-4 mr-2" />
-          {customer.total_orders} orders · ₹{customer.total_spent.toFixed(2)}
+          {customer.total_orders} orders · Rs{customer.total_spent.toFixed(2)}
         </div>
       </div>
 

@@ -15,12 +15,7 @@ export const sortMenuItems = (items: MenuItem[], sortBy: string) => {
   }
 };
 
-export const filterByDietaryPreferences = (items: MenuItem[], dietaryTags: string[]) => {
-  if (dietaryTags.length === 0) return items;
-  return items.filter(item => 
-    dietaryTags.every(tag => item.dietaryTags?.includes(tag))
-  );
-};
+// Dietary preferences filter removed
 
 export const filterByPriceRange = (items: MenuItem[], range: [number, number]) => {
   return items.filter(item => 

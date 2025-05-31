@@ -20,7 +20,7 @@ export const downloadInventoryReport = async (items: any[]) => {
   const outOfStockItems = items.filter(item => item.quantity === 0).length;
 
   doc.text(`Total Items: ${totalItems}`, 14, 42);
-  doc.text(`Total Value: ₹${totalValue.toLocaleString()}`, 14, 48);
+  doc.text(`Total Value: Rs.${totalValue.toLocaleString()}`, 14, 48);
   doc.text(`Low Stock Items: ${lowStockItems}`, 14, 54);
   doc.text(`Out of Stock Items: ${outOfStockItems}`, 14, 60);
 
@@ -33,8 +33,8 @@ export const downloadInventoryReport = async (items: any[]) => {
       item.category,
       item.quantity,
       item.unit,
-      `₹${item.cost_price}`,
-      `₹${(item.quantity * item.cost_price).toLocaleString()}`,
+      `Rs.${item.cost_price}`,
+      `Rs.${(item.quantity * item.cost_price).toLocaleString()}`,
       item.storage_location
     ]),
     styles: { fontSize: 8 },

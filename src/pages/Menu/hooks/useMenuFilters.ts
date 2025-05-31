@@ -25,23 +25,45 @@ export function useMenuFilters() {
   const { menuItems, isLoading } = useMenuItems();
   
   const filteredItems = useMemo(() => {
-    return menuItems.filter(item => {
-      // Basic filters
+    // First apply all filters
+    const filtered = menuItems.filter(item => {
+      // Text search filter
       const matchesSearch = !searchQuery || 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase());
       
+      // Quick category selector filter
       const matchesCategory = quickCategory === 'all' || item.category === quickCategory;
+      
+      // Price range filter
       const matchesPrice = item.price >= filters.priceRange[0] && item.price <= filters.priceRange[1];
 
-      // Category filter
+      // Category filter from modal
       const matchesSelectedCategories = filters.selectedCategories.length === 0 ||
                                       filters.selectedCategories.includes(item.category);
       
-      // We'll show all items (available and unavailable) but handle their display differently in UI
       return matchesSearch && matchesCategory && matchesPrice && matchesSelectedCategories;
     });
-  }, [searchQuery, quickCategory, filters]);
+    
+    // Then apply sorting
+    return sortItems(filtered, filters.sortBy);
+  }, [searchQuery, quickCategory, filters, menuItems]);
+  
+  // Helper function to sort the filtered items
+  const sortItems = (items: MenuItem[], sortBy: string) => {
+    switch (sortBy) {
+      case 'priceAsc':
+        return [...items].sort((a, b) => a.price - b.price);
+      case 'priceDesc':
+        return [...items].sort((a, b) => b.price - a.price);
+      case 'nameAsc':
+        return [...items].sort((a, b) => a.name.localeCompare(b.name));
+      case 'nameDesc':
+        return [...items].sort((a, b) => b.name.localeCompare(a.name));
+      default: // 'popular' or any other value
+        return items; // Keep original order (assumed to be popularity based)
+    }
+  };
 
   return {
     searchQuery,
