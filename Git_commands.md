@@ -4,7 +4,7 @@
 cd "path/to/your/project"
 
 git config --global user.name "Aakash Jangid"
-git config --global user.email "your-email@example.com"
+git config --global user.email "aakashjangid0@gmail.com"
 
 git remote set-url origin https://github.com/aakash-jangid0/Netlify.git
 
