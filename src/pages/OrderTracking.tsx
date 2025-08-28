@@ -597,7 +597,7 @@ function OrderTracking() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="fixed bottom-6 left-4 right-4 md:static md:flex md:space-x-4"
+            className="sticky bottom-0 bg-white p-4 md:static md:flex md:space-x-4 border-t md:border-t-0 shadow-lg md:shadow-none z-10"
           >
             <button
               onClick={() => {
@@ -608,26 +608,26 @@ function OrderTracking() {
                   window.location.href = '/auth?mode=signup&redirect=' + encodeURIComponent(window.location.pathname);
                 }
               }}
-              className={`flex items-center justify-center gap-2 w-full py-3 rounded-full font-medium transition-colors mb-3 md:mb-0 ${
+              className={`flex items-center justify-center gap-2 w-full py-4 md:py-3 rounded-full font-medium transition-colors mb-3 md:mb-0 text-base md:text-sm touch-manipulation ${
                 isRegisteredCustomer 
                   ? 'bg-green-500 text-white hover:bg-green-600' 
                   : 'bg-blue-500 text-white hover:bg-blue-600'
               }`}
             >
-              <MessageSquare className="w-4 h-4" />
+              <MessageSquare className="w-5 h-5 md:w-4 md:h-4" />
               {isRegisteredCustomer ? 'Need Help? Start Chat' : 'Sign Up for Live Chat'}
             </button>
 
             <button
               onClick={() => setFeedbackOpen(true)}
               disabled={hasFeedback}
-              className={`flex items-center justify-center gap-2 w-full py-3 rounded-full font-medium transition-colors ${
+              className={`flex items-center justify-center gap-2 w-full py-4 md:py-3 rounded-full font-medium transition-colors text-base md:text-sm touch-manipulation ${
                 hasFeedback 
                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
                   : 'bg-blue-500 text-white hover:bg-blue-600'
               }`}
             >
-              <MessageSquare className="w-4 h-4" />
+              <MessageSquare className="w-5 h-5 md:w-4 md:h-4" />
               {hasFeedback ? 'Feedback Submitted' : 'Leave Feedback'}
             </button>
           </motion.div>

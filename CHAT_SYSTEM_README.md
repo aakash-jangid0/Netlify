@@ -37,8 +37,7 @@ src/
 ├── components/
 │   └── chat/
 │       ├── SupportChat.tsx (Legacy - Responsive improved)
-│       ├── SupportChatModal.tsx (New - Mobile-first modal)
-│       └── FloatingChatButton.tsx (Floating help button)
+│       └── SupportChatModal.tsx (New - Mobile-first modal)
 ├── pages/
 │   ├── OrderTracking.tsx (Updated with new chat button)
 │   └── admin/
