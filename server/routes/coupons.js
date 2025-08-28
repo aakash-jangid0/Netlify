@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const Coupon = require('../models/Coupon');
-const { authMiddleware, adminMiddleware } = require('../middleware/auth');
+import Coupon from '../models/Coupon.js';
+import { auth as authMiddleware, requireAdmin as adminMiddleware } from '../middleware/auth.js';
 
 // Get all coupons - Admin only
 router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
@@ -111,4 +111,4 @@ router.post('/validate', authMiddleware, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

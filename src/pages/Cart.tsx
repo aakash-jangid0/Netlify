@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Minus, Plus, Trash2, ArrowLeft, IndianRupee, CreditCard, Wallet, ShoppingBag, Tag, X, CheckCircle } from 'lucide-react';
+import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag, X, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -50,7 +50,7 @@ const incrementCouponUsage = async (couponId: number): Promise<void> => {
 };
 
 function Cart() {
-  const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, clearCartSilently } = useCart();
   const { user } = useAuth();
   const { createOrder } = useOrders();
   const navigate = useNavigate();
@@ -59,7 +59,7 @@ function Cart() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderType, setOrderType] = useState<'dine-in' | 'takeaway'>('dine-in');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'upi'>('cash');
+  const [paymentMethod] = useState<'cash' | 'card' | 'upi'>('cash');
   const [createdOrderId, setCreatedOrderId] = useState<string>();
   const [completedPaymentData, setCompletedPaymentData] = useState<{
     method: string;
@@ -118,7 +118,11 @@ function Cart() {
     setShowPaymentModal(true);
   };
 
-  const handlePaymentComplete = async (receivedPaymentMethod?: string, paymentStatus?: string, paymentData?: any) => {
+  const handlePaymentComplete = async (
+    receivedPaymentMethod?: string, 
+    paymentStatus?: string, 
+    paymentData?: Record<string, unknown>
+  ) => {
     console.log('Payment complete callback received:', { 
       receivedPaymentMethod, 
       paymentStatus, 
@@ -133,7 +137,7 @@ function Cart() {
     }
     
     // Check if we received an orderId in the payment data
-    const paymentOrderId = paymentData?.orderId;
+    const paymentOrderId = paymentData?.orderId as string | undefined;
     console.log('Order IDs available:', { paymentOrderId, createdOrderId });
     
     // Use either the existing createdOrderId or the one received in paymentData
@@ -299,7 +303,7 @@ function Cart() {
         }
       }
       
-      clearCart();
+      clearCartSilently();
       
       // Close payment modal and show success modal
       setShowPaymentModal(false);
@@ -308,14 +312,14 @@ function Cart() {
       // Show a toast notification as well
       // If there's a payment message provided from the payment modal, use it
       // Otherwise use the default success message
-      const successMessage = paymentData?.paymentMessage || 
+      const successMessage = (paymentData?.paymentMessage as string) || 
         (finalPaymentMethod === 'razorpay' ? 'Payment successful! Order placed.' : 'Order placed successfully!');
         
       toast.success(successMessage, {
         duration: 5000,
         icon: '✅',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error placing order:', error);
       
       // For cash payments or if skipErrorHandling flag is set, we don't want to show the error 
@@ -330,14 +334,14 @@ function Cart() {
           orderId: finalOrderId
         });
         
-        clearCart();
+        clearCartSilently();
         
         // Close payment modal and show success modal
         setShowPaymentModal(false);
         setShowSuccessModal(true);
         
         // Show success toast for cash payment
-        toast.success(paymentData?.paymentMessage || `${receivedPaymentMethod?.toUpperCase() || 'CASH'} payment selected. Pay at counter.`, {
+        toast.success((paymentData?.paymentMessage as string) || `${receivedPaymentMethod?.toUpperCase() || 'CASH'} payment selected. Pay at counter.`, {
           duration: 5000,
           icon: '✅',
         });
@@ -348,13 +352,23 @@ function Cart() {
       // For other payment methods, show appropriate error messages
       let errorMessage = 'Failed to place order. Please try again.';
       
-      if (error.message?.includes('network') || error.message?.includes('connection')) {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
-      } else if (error.message?.includes('not found')) {
-        errorMessage = 'Order not found. Please try again.';
-      } else if (error.message?.includes('permission') || error.message?.includes('403')) {
-        errorMessage = 'You don\'t have permission to update this order. Please try again or contact support.';
-      } else if (error.code === '23505') {
+      const isErrorWithMessage = (err: unknown): err is { message: string } => 
+        typeof err === 'object' && err !== null && 'message' in err;
+      
+      const isErrorWithCode = (err: unknown): err is { code: string } =>
+        typeof err === 'object' && err !== null && 'code' in err;
+      
+      if (isErrorWithMessage(error)) {
+        if (error.message.includes('network') || error.message.includes('connection')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message.includes('not found')) {
+          errorMessage = 'Order not found. Please try again.';
+        } else if (error.message.includes('permission') || error.message.includes('403')) {
+          errorMessage = 'You don\'t have permission to update this order. Please try again or contact support.';
+        } 
+      }
+      
+      if (isErrorWithCode(error) && error.code === '23505') {
         errorMessage = 'This order has already been processed.';
       }
       
@@ -539,10 +553,17 @@ function Cart() {
                               
                               setAppliedCoupon(coupon);
                               setCouponCode('');
-                              toast.success('Coupon applied successfully!');
-                            } catch (error: any) {
+                              toast.success('Coupon applied successfully!', { 
+                                duration: 3000,
+                                style: { cursor: 'pointer' }
+                              });
+                            } catch (error: unknown) {
                               console.error('Error applying coupon:', error);
-                              toast.error(error.message || 'Invalid coupon code');
+                              const errorMsg = error instanceof Error ? error.message : 'Invalid coupon code';
+                              toast.error(errorMsg, { 
+                                duration: 4000,
+                                style: { cursor: 'pointer' }
+                              });
                             } finally {
                               setCouponLoading(false);
                             }
@@ -572,7 +593,10 @@ function Cart() {
                             <button
                               onClick={() => {
                                 setAppliedCoupon(null);
-                                toast.success('Coupon removed');
+                                toast.success('Coupon removed', { 
+                                  duration: 2000,
+                                  style: { cursor: 'pointer' }
+                                });
                               }}
                               className="text-gray-400 hover:text-gray-600"
                             >
@@ -662,6 +686,7 @@ function Cart() {
                 totalAmount: total,
                 user_id: user?.id, // Make this optional in case user object is incomplete
                 customerName: user?.user_metadata?.name || user?.email || 'Guest',
+                customerEmail: user?.email,
                 tableNumber: orderType === 'dine-in' ? tableNumber : undefined,
                 orderType,
                 // Include coupon information if a coupon is applied
@@ -673,7 +698,7 @@ function Cart() {
                   discount_amount: discountAmount
                 } : null,
                 // Set payment method based on the current payment flow
-                paymentMethod: 'pending' as any // Initially set as pending, will be updated after payment
+                paymentMethod: 'pending' as 'cash' | 'card' | 'upi' | 'razorpay' | 'pending' // Initially set as pending, will be updated after payment
               });
               
               if (!order || !order.id) {

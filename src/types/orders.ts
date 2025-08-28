@@ -9,6 +9,8 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  // The order number is always derived from the last 6 characters of the order ID
+  // Use order_id.slice(-6) to get a consistent display format
   items: OrderItem[];
   customerInfo: {
     name: string;

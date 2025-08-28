@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, ChefHat, Bell, Check, ArrowLeft, MapPin, Timer, 
-  User, Phone, Utensils, ArrowRight, AlertCircle, Calendar,
-  CreditCard, DollarSign, MessageSquare, FileText, Download
+  User, Utensils, ArrowRight, AlertCircle, Calendar,
+  CreditCard, DollarSign, MessageSquare, Download
 } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import PageTransition from '../components/common/PageTransition';
 import { supabase } from '../lib/supabase';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
+import { useAuth } from '../context/AuthContext';
 import FeedbackForm from '../components/feedback/FeedbackForm';
+import { SupportChatModal } from '../components/chat/SupportChatModal';
 
 interface OrderStatus {
   status: 'pending' | 'preparing' | 'ready' | 'delivered';
@@ -24,8 +26,35 @@ interface OrderItem {
   price: number;
 }
 
+interface InvoiceItem {
+  name: string;
+  price: number;
+  quantity: number;
+  tax_rate: number;
+  tax_amount: number;
+  total: number;
+}
+
+interface Invoice {
+  id?: string;
+  order_id?: string;
+  items?: InvoiceItem[];
+  total_amount?: number;
+  created_at?: string;
+  invoice_number?: string;
+  status?: string;
+  customer_name?: string;
+  // Include other possible properties with specific types
+  invoice_items?: InvoiceItem[];
+  subtotal?: number;
+  tax_amount?: number;
+  payment_method?: string;
+  due_date?: string;
+  [key: string]: unknown; // For any other properties
+}
+
 interface TrackingOrder {
-  id: string;
+  id: string; // For displaying order number, use id.slice(-6)
   order_items: OrderItem[];
   table_number: string;
   status: OrderStatus['status'];
@@ -73,42 +102,41 @@ const statusSteps = [
 function OrderTracking() {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth(); // Add useAuth hook
   const [order, setOrder] = useState<TrackingOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [hasFeedback, setHasFeedback] = useState(false);
-  const [invoice, setInvoice] = useState<any>(null);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [isRegisteredCustomer, setIsRegisteredCustomer] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    fetchOrder();
-    
-    // Set up automatic refresh every 5 seconds
-    const intervalId = setInterval(() => {
-      fetchOrder();
-    }, 5000);
-    
-    // Clean up the interval on component unmount
-    return () => clearInterval(intervalId);
-  }, [orderId]);
-
-  // Setup real-time sync for order updates
-  useRealtimeSync({
-    table: 'orders',
-    filter: `id=eq.${orderId}`,
-    onUpdate: (updatedOrder) => {
-      setOrder(prev => {
-        if (prev?.status !== updatedOrder.status) {
-          toast.success(`Order status updated to ${updatedOrder.status}`);
-        }
-        return { ...prev, ...updatedOrder };
-      });
+  const fetchInvoice = useCallback(async (orderId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          items:invoice_items(*)
+        `)
+        .eq('order_id', orderId)
+        .maybeSingle();
+        
+      if (error) throw error;
+      
+      if (data) {
+        setInvoice(data);
+      }
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      // Don't show error toast here, it's not a critical failure
     }
-  });
+  }, []);
 
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
@@ -130,39 +158,49 @@ function OrderTracking() {
       setOrder(orderData);
       setHasFeedback(orderData.has_feedback || false);
       
+      // Since only authenticated users can access order tracking, 
+      // they are by definition registered customers
+      setIsRegisteredCustomer(!!user);
+      
       // Check if this order has an invoice
       fetchInvoice(orderData.id);
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       console.error('Error fetching order:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
       toast.error('Failed to load order details');
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId, fetchInvoice, user]);
 
-  const fetchInvoice = async (orderId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          items:invoice_items(*)
-        `)
-        .eq('order_id', orderId)
-        .maybeSingle();
-        
-      if (error) throw error;
-      
-      if (data) {
-        setInvoice(data);
-      }
-    } catch (error) {
-      console.error('Error fetching invoice:', error);
-      // Don't show error toast here, it's not a critical failure
+  useEffect(() => {
+    fetchOrder();
+    
+    // Set up automatic refresh every 5 seconds
+    const intervalId = setInterval(() => {
+      fetchOrder();
+    }, 5000);
+    
+    // Clean up the interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [orderId, fetchOrder]);
+
+  // Setup real-time sync for order updates
+  useRealtimeSync({
+    table: 'orders',
+    filter: `id=eq.${orderId}`,
+    onUpdate: (updatedOrder) => {
+      setOrder(prev => {
+        if (prev?.status !== updatedOrder.status) {
+          toast.success(`Order status updated to ${updatedOrder.status}`);
+        }
+        return { ...prev, ...updatedOrder };
+      });
     }
-  };
+  });
 
+  // Kept for future use when we add a view invoice button
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleViewInvoice = async () => {
     try {
       setLoadingInvoice(true);
@@ -180,7 +218,7 @@ function OrderTracking() {
           display_order_id: `#${order!.id.slice(-6)}`,
           customerName: order!.customer_name || 'Guest',
           tableNumber: order!.table_number || undefined,
-          items: order!.order_items?.map((item: any) => ({
+          items: order!.order_items?.map((item) => ({
             name: item.name,
             price: item.price,
             quantity: item.quantity,
@@ -227,7 +265,7 @@ function OrderTracking() {
           display_order_id: `#${order!.id.slice(-6)}`,
           customerName: order!.customer_name || 'Guest',
           tableNumber: order!.table_number || undefined,
-          items: order!.order_items?.map((item: any) => ({
+          items: order!.order_items?.map((item) => ({
             name: item.name,
             price: item.price,
             quantity: item.quantity,
@@ -244,8 +282,7 @@ function OrderTracking() {
           date: new Date(order!.created_at)
         };
         
-        // Use the same invoice generator as used during order creation
-        const invoiceGenerator = await import('../utils/invoiceGenerator');
+        // Use the invoice utils to generate and download the invoice
         const invoiceUtils = await import('../utils/invoiceUtils');
         invoiceUtils.downloadInvoice(invoiceData);
       }
@@ -562,13 +599,24 @@ function OrderTracking() {
             transition={{ delay: 0.4 }}
             className="fixed bottom-6 left-4 right-4 md:static md:flex md:space-x-4"
           >
-            <Link
-              to="/support"
-              className="flex items-center justify-center gap-2 w-full bg-green-500 text-white py-3 rounded-full font-medium hover:bg-green-600 transition-colors mb-3 md:mb-0"
+            <button
+              onClick={() => {
+                if (isRegisteredCustomer) {
+                  setShowChatModal(true);
+                } else {
+                  // Redirect to registration for non-registered customers
+                  window.location.href = '/auth?mode=signup&redirect=' + encodeURIComponent(window.location.pathname);
+                }
+              }}
+              className={`flex items-center justify-center gap-2 w-full py-3 rounded-full font-medium transition-colors mb-3 md:mb-0 ${
+                isRegisteredCustomer 
+                  ? 'bg-green-500 text-white hover:bg-green-600' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
             >
-              <AlertCircle className="w-4 h-4" />
-              Need Help?
-            </Link>
+              <MessageSquare className="w-4 h-4" />
+              {isRegisteredCustomer ? 'Need Help? Start Chat' : 'Sign Up for Live Chat'}
+            </button>
 
             <button
               onClick={() => setFeedbackOpen(true)}
@@ -592,6 +640,15 @@ function OrderTracking() {
           isOpen={feedbackOpen}
           onOpenChange={setFeedbackOpen}
           onFeedbackSubmitted={handleFeedbackSubmitted}
+        />
+      )}
+
+      {/* Support Chat Modal - Only for registered customers */}
+      {order && isRegisteredCustomer && (
+        <SupportChatModal
+          orderId={order.id}
+          isOpen={showChatModal}
+          onClose={() => setShowChatModal(false)}
         />
       )}
     </PageTransition>

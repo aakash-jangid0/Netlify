@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -11,6 +12,11 @@ import authRoutes from './routes/auth.js';
 import razorpayRoutes from './routes/razorpay.js';
 import categoryRoutes from './routes/categories.js';
 import paymentsRoutes from './routes/payments.js';
+import supportChatRoutes from './routes/support-chat.js';
+import customersRoutes from './routes/customers.js';
+import couponsRoutes from './routes/coupons.js';
+import staffRoutes from './routes/staff.js';
+// Removed Stripe import as we're using Razorpay instead
 
 // Get directory name properly in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -48,6 +54,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/razorpay', razorpayRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/support-chat', supportChatRoutes);
+app.use('/api/customers', customersRoutes);
+app.use('/api/coupons', couponsRoutes);
+app.use('/api/staff', staffRoutes);
+// Removed Stripe routes as we're using Razorpay instead
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

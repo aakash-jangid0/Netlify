@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Package, Check, X, Phone, AlertTriangle, Download, FileText, Printer, CreditCard } from 'lucide-react';
+import { Clock, Package, Phone, AlertTriangle, Download, FileText, Printer, CreditCard } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import { viewOrDownloadInvoice, fetchInvoiceByOrderId, printInvoice } from '../../utils/invoiceUtils';
@@ -13,7 +13,7 @@ interface OrderItem {
 }
 
 interface Order {
-  id: string;
+  id: string; // For displaying order number, use id.slice(-6)
   items: OrderItem[];
   customer_name: string;
   customer_phone: string;
@@ -113,29 +113,6 @@ function OrderManagement() {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
-  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
-    try {
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ status: newStatus })
-        .eq('id', orderId);
-
-      if (updateError) throw updateError;
-
-      // Update local state to reflect the new status immediately
-      setOrders(currentOrders => 
-        currentOrders.map(order => 
-          order.id === orderId ? { ...order, status: newStatus } : order
-        )
-      );
-
-      toast.success(`Order status updated to ${newStatus}`);
-    } catch (err) {
-      console.error('Error updating order status:', err);
-      toast.error('Failed to update order status');
-    }
-  };
   
   const updatePaymentStatus = async (orderId: string, newStatus: Order['payment_status']) => {
     try {
@@ -207,7 +184,7 @@ function OrderManagement() {
           tax_amount: order.total_amount * 0.18,
           discount_amount: 0,
           total_amount: order.total_amount * 1.18,
-          status: 'issued' as 'issued',
+          status: 'issued' as const,
           payment_method: order.payment_method || 'Cash',
           notes: '',
           terms_and_conditions: 'Standard terms apply',
@@ -216,7 +193,7 @@ function OrderManagement() {
           last_printed_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          items: order.items?.map((item: any) => ({
+          items: order.items?.map((item: OrderItem) => ({
             id: item.id,
             invoice_id: '',
             item_name: item.name,

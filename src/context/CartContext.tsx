@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useRef } from 'react';
-import { toast } from 'react-hot-toast';
+import { toastUtils } from '../utils/toastUtils';
 
-interface CartItem {
+export interface CartItem {
   id: string;
   name: string;
   price: number;
@@ -9,7 +9,7 @@ interface CartItem {
   image: string;
 }
 
-interface CartState {
+export interface CartState {
   cartItems: CartItem[];
   lastAction?: {
     type: string;
@@ -17,21 +17,30 @@ interface CartState {
   };
 }
 
-interface CartContextType {
+export interface CartContextType {
   cartItems: CartItem[];
   addToCart: (item: Omit<CartItem, 'quantity'>) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
+  clearCartSilently: () => void;
 }
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
 
-type CartAction =
+export type CartAction =
   | { type: 'ADD_TO_CART'; payload: CartItem }
   | { type: 'REMOVE_FROM_CART'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
-  | { type: 'CLEAR_CART' };
+  | { type: 'CLEAR_CART'; silent?: boolean };
+
+export function useCart() {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
+}
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
@@ -75,7 +84,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'CLEAR_CART':
       return {
         cartItems: [],
-        lastAction: { type: 'CLEAR' }
+        lastAction: action.silent ? undefined : { type: 'CLEAR' }
       };
     default:
       return state;
@@ -90,21 +99,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (state.lastAction && state.lastAction !== prevStateRef.current?.lastAction) {
       switch (state.lastAction.type) {
         case 'ADD_NEW':
-          toast.success(`${state.lastAction.itemName} added to cart`);
+          toastUtils.quickSuccess(`${state.lastAction.itemName} added to cart`);
           break;
         case 'ADD_EXISTING':
-          toast.success(`Added another ${state.lastAction.itemName} to cart`);
+          toastUtils.quickSuccess(`Added another ${state.lastAction.itemName} to cart`);
           break;
         case 'REMOVE':
-          toast.success('Item removed from cart');
+          toastUtils.quickSuccess('Item removed from cart');
           break;
         case 'CLEAR':
-          toast.success('Cart cleared');
+          toastUtils.quickSuccess('Cart cleared');
           break;
       }
     }
     prevStateRef.current = state;
-  }, [state.lastAction]);
+  }, [state]);
 
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {
     dispatch({ type: 'ADD_TO_CART', payload: { ...item, quantity: 1 } });
@@ -122,6 +131,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'CLEAR_CART' });
   };
 
+  const clearCartSilently = () => {
+    dispatch({ type: 'CLEAR_CART', silent: true });
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -130,17 +143,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removeFromCart,
         updateQuantity,
         clearCart,
+        clearCartSilently,
       }}
     >
       {children}
     </CartContext.Provider>
   );
-}
-
-export function useCart() {
-  const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
-  return context;
 }

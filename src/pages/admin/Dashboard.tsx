@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, Coffee, ClipboardList, QrCode, TrendingUp,
-  Users, DollarSign, Package, FileText,
-  UserCog, Boxes, Heart, ChefHat,
-  MessageSquare, Bell, Ticket, Globe
+  LayoutDashboard, Coffee, ClipboardList, Boxes, UserCog, Heart, 
+  MessageSquare, Ticket, FileText, Globe, QrCode, 
+  DollarSign, Users, TrendingUp, HelpCircle, 
+  Package, ChefHat, Bell
 } from 'lucide-react';
 import StatCard from '../../components/admin/dashboard/StatCard';
 import RevenueChart from '../../components/admin/dashboard/RevenueChart';
@@ -114,11 +114,11 @@ function Dashboard() {
     { path: '/admin/staff', icon: UserCog, label: 'Staff' },
     { path: '/admin/customers', icon: Heart, label: 'Customers' },
     { path: '/admin/feedback', icon: MessageSquare, label: 'Feedback' },
+    { path: '/admin/support', icon: HelpCircle, label: 'Support Chat' },
     { path: '/admin/coupons', icon: Ticket, label: 'Coupons' },
     { path: '/admin/invoices', icon: FileText, label: 'Invoices' },
     { path: '/admin/website', icon: Globe, label: 'Website' },
     { path: '/admin/qr-codes', icon: QrCode, label: 'QR Codes' },
-
   ];
 
   return (

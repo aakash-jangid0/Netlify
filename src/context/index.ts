@@ -1,5 +1,5 @@
 export { AuthProvider } from './auth/AuthProvider';
-export { CartProvider } from './cart/CartProvider';
+export { CartProvider } from './CartContext';
 
 export { useAuth } from './auth/AuthContext';
-export { useCart } from './cart/CartContext';
+export { useCart } from './CartContext';

@@ -1,4 +1,4 @@
-const { supabase } = require('../lib/supabase');
+import { supabase } from '../lib/supabase.js';
 
 class Coupon {
   /**
@@ -251,4 +251,4 @@ class Coupon {
   }
 }
 
-module.exports = Coupon;
+export default Coupon;

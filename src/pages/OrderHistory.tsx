@@ -1,14 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Package, RefreshCcw, Search, ChevronDown, Filter, MessageSquare, FileText, Download } from 'lucide-react';
+import { Clock, Package, RefreshCcw, Search, ChevronDown, Filter, Download } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { supabase } from '../lib/supabase';
 import PageTransition from '../components/common/PageTransition';
 import { viewOrDownloadInvoice } from '../utils/invoiceUtils';
 import { useOrders } from '../hooks/useOrders';
-import FeedbackForm from '../components/feedback/FeedbackForm';
+
+interface OrderItem {
+  id?: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+  notes?: string;
+}
 
 function OrderHistory() {
   const { addToCart } = useCart();
@@ -16,57 +23,7 @@ function OrderHistory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-  const [invoices, setInvoices] = useState<Record<string, any>>({});
   const [loadingInvoices, setLoadingInvoices] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    // When orders load, check which ones have associated invoices
-    if (orders && orders.length > 0) {
-      // Get all order IDs
-      const orderIds = orders.map(order => order.id);
-      fetchInvoicesForOrders(orderIds);
-    }
-  }, [orders]);
-
-  const fetchInvoicesForOrders = async (orderIds: string[]) => {
-    try {
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('*')
-        .in('order_id', orderIds);
-      
-      if (error) throw error;
-      
-      // Create a map of order_id -> invoice
-      const invoiceMap: Record<string, any> = {};
-      if (data && data.length > 0) {
-        data.forEach(invoice => {
-          invoiceMap[invoice.order_id] = invoice;
-        });
-      }
-      
-      setInvoices(invoiceMap);
-    } catch (error) {
-      console.error('Error fetching invoices:', error);
-    }
-  };
-
-  const handleViewInvoice = async (orderId: string) => {
-    setLoadingInvoices(prev => ({ ...prev, [orderId]: true }));
-    try {
-      const order = orders.find(o => o.id === orderId);
-      if (!order) {
-        throw new Error('Order not found');
-      }
-      
-      await viewOrDownloadInvoice(orderId, order, false);
-    } catch (error) {
-      console.error('Error viewing invoice:', error);
-      toast.error('Failed to load invoice');
-    } finally {
-      setLoadingInvoices(prev => ({ ...prev, [orderId]: false }));
-    }
-  };
 
   const handleDownloadInvoice = async (orderId: string) => {
     setLoadingInvoices(prev => ({ ...prev, [orderId]: true }));
@@ -103,10 +60,10 @@ function OrderHistory() {
     }
   };
 
-  const handleReorder = (items: any[]) => {
+  const handleReorder = (items: OrderItem[]) => {
     items.forEach(item => {
       addToCart({
-        id: item.id,
+        id: item.id || `${item.name}-${Date.now()}`, // Generate ID if missing
         name: item.name,
         price: item.price,
         image: item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'
@@ -120,7 +77,7 @@ function OrderHistory() {
       selectedStatus === 'all' || order.status === selectedStatus
     )
     .filter(order =>
-      order.order_items?.some((item: any) =>
+      order.order_items?.some((item: OrderItem) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
       ) ||
       order.id.slice(-6).includes(searchQuery)
@@ -200,7 +157,7 @@ function OrderHistory() {
                       {order.coupon_code && (
                         <div className="flex items-center text-sm text-green-600">
                           <span className="mr-2">Applied Coupon:</span>
-                          <span className="font-medium">{order.coupon_code}</span>
+                          <span className="font-medium">{String(order.coupon_code)}</span>
                           <span className="mx-1">-</span>
                           <span>
                             {order.coupon_discount_type === 'percentage'
@@ -276,7 +233,7 @@ function OrderHistory() {
                         className="overflow-hidden"
                       >
                         <div className="mt-4 space-y-4 pt-4 border-t">
-                          {order.order_items?.map((item: any, index: number) => (
+                          {order.order_items?.map((item: OrderItem, index: number) => (
                             <div key={index} className="flex items-center space-x-4">
                               <div className="flex-1">
                                 <h4 className="font-medium">{item.name}</h4>
@@ -295,7 +252,7 @@ function OrderHistory() {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     addToCart({
-                                      id: item.id,
+                                      id: item.id || `${item.name}-${Date.now()}`, // Generate ID if missing
                                       name: item.name,
                                       price: item.price,
                                       image: item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'

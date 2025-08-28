@@ -12,6 +12,19 @@ interface PaymentOption {
   icon: React.ReactNode;
 }
 
+interface PaymentData {
+  orderId?: string;
+  paymentId?: string;
+  paymentMessage?: string;
+  skipErrorHandling?: boolean;
+  skipInvoice?: boolean;
+  isCashPayment?: boolean;
+  success?: boolean;
+  isPreOrder?: boolean;
+  finalizeOrder?: boolean;
+  error?: string;
+}
+
 // Enhanced Payment Modal Props combines the props from both previous components
 interface EnhancedPaymentModalProps {
   isOpen: boolean;
@@ -19,7 +32,7 @@ interface EnhancedPaymentModalProps {
   amount: number;
   orderId?: string;
   createOrder?: (paymentMethod?: string) => Promise<string | null>;
-  onPaymentComplete: (paymentMethod?: string, paymentStatus?: PaymentStatus, paymentData?: any) => void;
+  onPaymentComplete: (paymentMethod?: string, paymentStatus?: PaymentStatus, paymentData?: PaymentData) => void;
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
@@ -40,7 +53,6 @@ export default function EnhancedPaymentModal({
   customerEmail,
   customerPhone,
   mode = 'website',
-  businessName = 'TastyBites',
   orderDescription = 'Food Order Payment'
 }: EnhancedPaymentModalProps) {
   // State variables for order management
@@ -175,9 +187,6 @@ export default function EnhancedPaymentModal({
           // Store payment method message to pass to payment handler instead of showing toast here
           const paymentMessage = `${methodName} payment selected. ${mode === 'website' ? 'Pay at counter.' : 'Collect payment at counter.'}`;
           
-          // Show a temporary toast for better feedback to the user
-          toast.success(`Processing ${methodName} payment...`);
-          
           // Pass the order ID and payment message in payment data with special flags for cash payments
           console.log('Completing payment with order ID:', paymentOrderId);
           onPaymentComplete(selectedMethod, 'pending', { 
@@ -230,7 +239,11 @@ export default function EnhancedPaymentModal({
 
           console.log(`Starting Razorpay payment flow for order: ${paymentOrderId}, amount: ${amount}`);
           
-          toast.loading('Processing payment...', { id: 'payment-processing' });
+          toast.loading('Processing payment... (Click to cancel)', { 
+            id: 'payment-processing',
+            duration: 10000,
+            style: { cursor: 'pointer' }
+          });
           
           // Process the payment using our utility function
           const result = await processRazorpayPayment(
@@ -255,48 +268,53 @@ export default function EnhancedPaymentModal({
             finalizeOrder: true // Signal that the order should be finalized now
           });
           onClose();
-        } catch (error: any) {
+        } catch (error: unknown) {
           setIsProcessing(false);
           
-          if (error.message === 'Payment cancelled by user') {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          
+          if (errorMessage === 'Payment cancelled by user') {
             toast.error('Payment was cancelled.');
-          } else if (error.message?.includes('SDK failed to load')) {
+          } else if (errorMessage?.includes('SDK failed to load')) {
             toast.error('Payment service unavailable. Please check your internet connection and try again.', {
               duration: 5000,
               icon: '🌐',
             });
-          } else if (error.message?.includes('verification failed')) {
+          } else if (errorMessage?.includes('verification failed')) {
             toast.error('Payment verification failed. The payment may have been processed. Please check with customer service.', {
               duration: 6000,
               icon: '⚠️',
             });
             // Still record the payment as pending so it can be verified manually
             onPaymentComplete('razorpay', 'pending', {
-              error: error.message,
+              error: errorMessage,
               orderId: orderId || generatedOrderId
             });
-          } else if (error.message?.includes('Failed to fetch') || error.message?.includes('Network')) {
+          } else if (errorMessage?.includes('Failed to fetch') || errorMessage?.includes('Network')) {
             toast.error('Network error. Please check your internet connection and try again.', {
               icon: '📶',
               duration: 4000,
             });
           } else {
             console.error('Razorpay payment error:', error);
-            toast.error(error.message || 'Payment processing failed. Please try again.', {
+            toast.error(errorMessage || 'Payment processing failed. Please try again.', {
               duration: 4000,
             });
           }
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Payment error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
       // Provide more specific error messages based on error types
-      if (error.message?.includes('network') || error.message?.includes('connection')) {
+      if (errorMessage?.includes('network') || errorMessage?.includes('connection')) {
         toast.error('Network error. Please check your internet connection and try again.');
-      } else if (error.message?.includes('authentication') || error.message?.includes('auth')) {
+      } else if (errorMessage?.includes('authentication') || errorMessage?.includes('auth')) {
         toast.error('Authentication error. Please try again or contact support.');
       } else {
-        toast.error(error.message || 'Payment processing failed. Please try again.');
+        toast.error(errorMessage || 'Payment processing failed. Please try again.');
       }
     } finally {
       setIsProcessing(false);
