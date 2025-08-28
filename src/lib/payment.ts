@@ -13,8 +13,11 @@ export const verifyRazorpayPayment = async (paymentData: RazorpayResponse): Prom
   paymentId: string;
 }> => {
   try {    console.log('Verifying Razorpay payment:', paymentData);
-    // Point to the Express server API route using the environment variable
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    // Point to the Express server API route using dynamic URL detection
+    const isDevelopment = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+    const API_URL = isDevelopment 
+      ? (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
+      : `${window.location.origin}/api`;
     const endpoint = `${API_URL}/razorpay/verify-payment`;
     console.log('Sending request to Razorpay verification endpoint:', endpoint);
     
@@ -35,7 +38,7 @@ export const verifyRazorpayPayment = async (paymentData: RazorpayResponse): Prom
       try {
         errorData = JSON.parse(errorText);
         throw new Error(errorData.error || 'Payment verification failed');
-      } catch (e) {
+      } catch {
         throw new Error(`API error: ${errorText || 'Payment verification failed'}`);
       }
     }
@@ -43,9 +46,10 @@ export const verifyRazorpayPayment = async (paymentData: RazorpayResponse): Prom
     const data = await response.json();
     console.log('Payment verification result:', data);
     return data;
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error verifying payment:', error);
-    toast.error(error.message || 'Payment verification failed. Please contact support.');
+    const errorMessage = error instanceof Error ? error.message : 'Payment verification failed. Please contact support.';
+    toast.error(errorMessage);
     throw error;
   }
 };
@@ -63,12 +67,15 @@ export const savePaymentDetails = async (
   method: PaymentMethod,
   status: PaymentStatus,
   transactionId?: string,
-  transactionData?: any
+  transactionData?: Record<string, unknown>
 ): Promise<{ success: boolean; data: PaymentData }> => {
   try {    console.log('Saving payment details:', { orderId, amount, method, status, transactionId });
     
-    // Get API URL from environment variables
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    // Get API URL from dynamic detection
+    const isDevelopment = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+    const API_URL = isDevelopment 
+      ? (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
+      : `${window.location.origin}/api`;
     const endpoint = `${API_URL}/payments`;
     console.log('Saving payment details to endpoint:', endpoint);
     
@@ -94,9 +101,10 @@ export const savePaymentDetails = async (
     }
 
     return await response.json();
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error saving payment details:', error);
-    toast.error(error.message || 'Failed to record payment. Please contact support.');
+    const errorMessage = error instanceof Error ? error.message : 'Failed to record payment. Please contact support.';
+    toast.error(errorMessage);
     throw error;
   }
 };
@@ -183,7 +191,7 @@ export const processRazorpayPayment = async (
         'razorpay',
         'completed',
         response.razorpay_payment_id,
-        response
+        response as unknown as Record<string, unknown>
       );
     } else {
       throw new Error('Payment verification failed');

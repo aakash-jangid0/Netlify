@@ -27,7 +27,10 @@ interface CouponData {
 // Utility function to increment coupon usage count
 const incrementCouponUsage = async (couponId: number): Promise<void> => {
   try {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const isDevelopment = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+    const API_URL = isDevelopment 
+      ? (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
+      : `${window.location.origin}/api`;
     const response = await fetch(`${API_URL}/coupons/${couponId}/increment-usage`, {
       method: 'POST',
       headers: {

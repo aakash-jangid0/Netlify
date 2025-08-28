@@ -264,7 +264,10 @@ export const useAdminChats = () => {
       setError(null);
       
       // Use the correct API base URL
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const isDevelopment = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+      const API_URL = isDevelopment 
+        ? (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
+        : `${window.location.origin}/api`;
       
       // Update via API call for immediate response
       const response = await fetch(`${API_URL}/support-chat/${chatId}/status`, {

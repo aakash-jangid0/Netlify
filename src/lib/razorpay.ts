@@ -1,5 +1,5 @@
 import { loadScript } from '../utils/loadScript';
-import { RazorpayOptions as RazorpayCheckoutOptions, RazorpayResponse } from '../types/payment';
+import { RazorpayResponse } from '../types/payment';
 
 // Get environment variables safely for both Vite and Node.js environments
 const getEnv = (key: string, defaultValue: string): string => {
@@ -15,6 +15,16 @@ const getEnv = (key: string, defaultValue: string): string => {
 
 // Using the provided test credentials
 const RAZORPAY_KEY = getEnv('VITE_RAZORPAY_KEY_ID', 'rzp_test_OjVlCpSLytdwMx');
+
+// Declare Razorpay interface for window object
+declare global {
+  interface Window {
+    Razorpay: new (options: unknown) => {
+      open: () => void;
+      on: (event: string, callback: (response: unknown) => void) => void;
+    };
+  }
+}
 
 export interface RazorpayOptions {
   amount: number;
@@ -50,7 +60,10 @@ export const createRazorpayOrder = async (amount: number, orderId?: string) => {
     }
     
     // Point to the Express server API route using the environment variable
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const isDevelopment = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+    const API_URL = isDevelopment 
+      ? (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
+      : `${window.location.origin}/api`;
     const endpoint = `${API_URL}/razorpay/create-order`;
     console.log('Sending request to Razorpay API endpoint:', endpoint);
     
@@ -72,7 +85,7 @@ export const createRazorpayOrder = async (amount: number, orderId?: string) => {
       try {
         errorData = JSON.parse(errorText);
         console.error('Parsed error data:', errorData);
-      } catch (e) {
+      } catch {
         // If not valid JSON, use the text as is
         console.error('Could not parse error response as JSON');
         throw new Error(`API error: ${errorText || 'Failed to create order'}`);
@@ -84,16 +97,17 @@ export const createRazorpayOrder = async (amount: number, orderId?: string) => {
     const orderData = await response.json();
     console.log('Razorpay order created successfully:', orderData);
     return orderData;
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating Razorpay order:', error);
-    throw new Error(error.message || 'Failed to create payment order');
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create payment order';
+    throw new Error(errorMessage);
   }
 };
 
 export const openRazorpayCheckout = (options: RazorpayOptions): Promise<RazorpayResponse> => {
   return new Promise((resolve, reject) => {
     try {
-      const rzp = new (window as any).Razorpay({
+      const rzp = new window.Razorpay({
         key: RAZORPAY_KEY,
         amount: options.amount,
         currency: options.currency || 'INR',
@@ -122,7 +136,7 @@ export const openRazorpayCheckout = (options: RazorpayOptions): Promise<Razorpay
         }
       });
 
-      rzp.on('payment.failed', (response: any) => {
+      rzp.on('payment.failed', (response: { error: { description?: string } }) => {
         reject(new Error(response.error.description || 'Payment failed'));
       });
 

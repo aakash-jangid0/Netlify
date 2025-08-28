@@ -717,14 +717,41 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
                 className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-center"
               >
                 <AlertCircle className="w-6 h-6 mx-auto mb-2" />
-                <p className="font-medium">Error</p>
-                <p className="text-sm">{error}</p>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm"
-                >
-                  Reload Page
-                </button>
+                <p className="font-medium">
+                  {error.includes('socket') || error.includes('connect') || error.includes('timeout') 
+                    ? 'Connection Issue' 
+                    : 'Error'
+                  }
+                </p>
+                <p className="text-sm mb-3">
+                  {error.includes('socket') || error.includes('connect') || error.includes('timeout')
+                    ? 'Live chat is temporarily unavailable. You can still submit feedback or contact us through other channels.'
+                    : error
+                  }
+                </p>
+                {error.includes('socket') || error.includes('connect') || error.includes('timeout') ? (
+                  <div className="space-y-2">
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm mr-2"
+                    >
+                      Try Again
+                    </button>
+                    <button 
+                      onClick={onClose}
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm"
+                    >
+                      Close
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm"
+                  >
+                    Reload Page
+                  </button>
+                )}
               </motion.div>
             )}
           </div>

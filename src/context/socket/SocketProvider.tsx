@@ -20,16 +20,42 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       setConnecting(true);
       
       try {
-        // First try to get the socket port from the API
-        console.log('Fetching socket port from API...');
-        const portResponse = await fetch('http://localhost:5000/api/socket-port')
-          .then(res => res.json())
-          .catch(() => ({ port: null }));
+        // Determine if we're in development or production
+        const isDevelopment = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
         
-        const port = portResponse.port || 5000;
-        console.log(`Connecting to WebSocket server on port ${port}`, { portResponse });
+        console.log('Environment check:', { 
+          isDevelopment, 
+          mode: import.meta.env.MODE, 
+          hostname: window.location.hostname,
+          origin: window.location.origin 
+        });
         
-        const newSocket = io(`http://localhost:${port}`, {
+        let socketUrl;
+        
+        if (isDevelopment) {
+          // In development, try to get the socket port from the API
+          try {
+            console.log('Development mode: Fetching socket port from API...');
+            const portResponse = await fetch('http://localhost:5000/api/socket-port')
+              .then(res => res.json())
+              .catch(() => ({ port: null }));
+            
+            const port = portResponse.port || 5000;
+            socketUrl = `http://localhost:${port}`;
+            console.log(`Development mode: Using port ${port}`, { portResponse });
+          } catch (error) {
+            console.warn('Could not fetch socket port, using default localhost:5000:', error);
+            socketUrl = 'http://localhost:5000';
+          }
+        } else {
+          // In production, use the same origin as the current page
+          socketUrl = window.location.origin;
+          console.log(`Production mode: Using origin ${socketUrl}`);
+        }
+        
+        console.log(`Connecting to WebSocket server at: ${socketUrl}`);
+        
+        const newSocket = io(socketUrl, {
           ...SOCKET_OPTIONS,
           auth: user ? { token: user.id, user } : { token: 'guest', user: null },
         });

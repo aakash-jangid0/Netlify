@@ -9,3 +9,9 @@
   CI = "false"
   NODE_OPTIONS = "--max-old-space-size=4096"
   DEBUG = "*"
+
+# Fallback redirect for SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
