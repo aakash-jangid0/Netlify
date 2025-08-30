@@ -1,7 +1,7 @@
-const serverless = require('serverless-http');
-const { app } = require('../../server/index.js');
+import serverless from 'serverless-http';
+import { app } from '../../server/index.js';
 
 // Export the serverless function
-module.exports.handler = serverless(app, {
+export const handler = serverless(app, {
   binary: ['application/octet-stream', 'application/x-protobuf', 'application/json'],
 });
