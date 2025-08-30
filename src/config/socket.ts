@@ -1,26 +1,32 @@
-// Socket.IO configuration with dynamic URL detection
-const isDevelopment = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+// Socket.IO configuration with dynamic URL and port detection
+const getBaseUrl = () => {
+  // Get the base URL dynamically from the current window location
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  const port = window.location.port;
 
-// Dynamic socket URL detection
-const getSocketUrl = () => {
-  // In development, try environment variable first, then fallback to localhost
-  if (isDevelopment) {
-    return import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+  // In development (localhost)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return `http://localhost:${port || '5000'}`;
   }
-  
-  // In production, use the same origin as the current page
-  return window.location.origin;
+
+  // In production (Netlify)
+  return `${protocol}//${hostname}${port ? `:${port}` : ''}`;
 };
 
-export const SOCKET_URL = getSocketUrl();
+export const SOCKET_URL = getBaseUrl();
 
 export const SOCKET_OPTIONS = {
-  transports: ['websocket', 'polling'], // Allow fallback to polling in production
+  transports: ['websocket', 'polling'],
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
-  timeout: 10000,
-  autoConnect: false, // We'll manually connect after auth
-  path: '/socket.io', // Make sure this matches server path
+  timeout: 20000,
+  autoConnect: false,
+  path: '/socket.io',
+  withCredentials: true,
+  forceNew: true,
+  secure: window.location.protocol === 'https:',
+  rejectUnauthorized: false // Allow self-signed certificates in development
 };

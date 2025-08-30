@@ -34,10 +34,10 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+  origin: true, // Allow all origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'X-Requested-With']
 }));
 app.use(express.json());
 
@@ -59,6 +59,22 @@ app.use('/api/customers', customersRoutes);
 app.use('/api/coupons', couponsRoutes);
 app.use('/api/staff', staffRoutes);
 // Removed Stripe routes as we're using Razorpay instead
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the dist directory
+  const distPath = path.join(__dirname, '../dist');
+  app.use(express.static(distPath));
+
+  // Handle SPA routing - send all requests to index.html
+  app.get('*', (req, res) => {
+    // Don't redirect API or socket.io requests
+    if (req.url.startsWith('/api') || req.url.startsWith('/socket.io')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

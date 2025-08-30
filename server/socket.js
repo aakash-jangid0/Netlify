@@ -4,11 +4,19 @@ import setupChatHandlers from './socket/chatHandlers.js';
 export function setupSocketIO(server) {
   const io = new Server(server, {
     cors: {
-      origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'], // Your frontend URLs
+      origin: true, // Allow all origins
       methods: ['GET', 'POST'],
       credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization']
     },
-    path: '/socket.io', // Match client path
+    path: '/socket.io',
+    allowEIO3: true,
+    serveClient: true,
+    connectTimeout: 45000,
+    pingTimeout: 30000,
+    pingInterval: 25000,
+    upgradeTimeout: 30000,
+    transports: ['websocket', 'polling']
   });
 
   // Middleware for authentication
