@@ -1,16 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
-
-interface SocketContextType {
-  socket: Socket | null;
-  isConnected: boolean;
-}
-
-const SocketContext = createContext<SocketContextType>({
-  socket: null,
-  isConnected: false,
-});
+import { SOCKET_URL, SOCKET_OPTIONS } from '../config/socket';
+import { SocketContext } from './socket/context';
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -19,106 +11,42 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let newSocket: Socket | null = null;
-    let isAborted = false;
 
-    const initializeSocket = async () => {
-      try {
-        // First, try to get the dynamic WebSocket port from the server
-        const portResponse = await fetch('http://localhost:5000/api/socket-port')
-          .then(res => {
-            if (!res.ok) throw new Error('Failed to fetch socket port');
-            return res.json();
-          })
-          .catch(() => ({ port: null }));
-
-        if (isAborted) return;
-        
-        // If we got a port, use it; otherwise, try the potential ports one by one
-        if (portResponse.port) {
-          connectToSocket(portResponse.port);
-        } else {
-          // Try different ports sequentially
-          const ports = [5000, 5001, 5002, 5003, 5004, 5005];
-          tryNextPort(ports, 0);
-        }
-      } catch (error) {
-        console.error('Error initializing socket:', error);
-        // Try connecting directly to default ports if API fails
-        const ports = [5000, 5001, 5002, 5003, 5004, 5005];
-        tryNextPort(ports, 0);
-      }
-    };
-
-    const tryNextPort = (ports: number[], index: number) => {
-      if (isAborted) return;
-      
-      if (index >= ports.length) {
-        console.error('Could not connect to any WebSocket server port');
-        return;
-      }
-
-      console.log(`Attempting to connect to WebSocket on port ${ports[index]}...`);
-      connectToSocket(ports[index], () => {
-        // If connection fails, try the next port
-        setTimeout(() => tryNextPort(ports, index + 1), 1000);
+    const initializeSocket = () => {
+      // Use the configured socket URL and options from config/socket.ts
+      newSocket = io(SOCKET_URL, {
+        ...SOCKET_OPTIONS,
+        auth: user ? { token: user.id, user } : undefined
       });
-    };
-
-    const connectToSocket = (port: number, onError?: () => void) => {
-      if (isAborted) return;
-
-      if (newSocket) {
-        newSocket.close();
-      }
-
-      newSocket = io(`http://localhost:${port}`, {
-        transports: ['websocket', 'polling'],
-        autoConnect: true,
-        reconnectionAttempts: 3,
-        reconnectionDelay: 1000,
-        timeout: 5000, // Reduced timeout for faster fallback
-        auth: user ? { token: user.id } : { token: null }
-      });
-
-      let connectionTimeout: NodeJS.Timeout | null = setTimeout(() => {
-        console.log(`Connection to port ${port} timed out`);
-        if (onError) onError();
-      }, 3000);
 
       newSocket.on('connect', () => {
-        if (connectionTimeout) {
-          clearTimeout(connectionTimeout);
-          connectionTimeout = null;
-        }
-        
-        console.log(`Connected to Socket.IO server on port ${port} with ID:`, newSocket?.id);
+        console.log('Connected to Socket.IO server with ID:', newSocket?.id);
         setIsConnected(true);
         setSocket(newSocket);
       });
 
       newSocket.on('connect_error', (error) => {
-        console.error(`Socket.IO connection error on port ${port}:`, error.message);
-        if (connectionTimeout) {
-          clearTimeout(connectionTimeout);
-          connectionTimeout = null;
-        }
-        
-        if (onError) onError();
+        console.error('Socket.IO connection error:', error.message);
+        setIsConnected(false);
       });
 
       newSocket.on('disconnect', (reason) => {
-        console.log(`Disconnected from Socket.IO server on port ${port}:`, reason);
+        console.log('Disconnected from Socket.IO server:', reason);
         setIsConnected(false);
       });
+
+      // Connect the socket
+      newSocket.connect();
     };
 
     initializeSocket();
 
     // Cleanup function
     return () => {
-      isAborted = true;
       if (newSocket) {
-        newSocket.close();
+        newSocket.disconnect();
+        setSocket(null);
+        setIsConnected(false);
       }
     };
   }, [user]);
@@ -128,12 +56,4 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       {children}
     </SocketContext.Provider>
   );
-}
-
-export function useSocket() {
-  const context = useContext(SocketContext);
-  if (context === undefined) {
-    throw new Error('useSocket must be used within a SocketProvider');
-  }
-  return context;
 }

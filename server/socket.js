@@ -4,14 +4,18 @@ import setupChatHandlers from './socket/chatHandlers.js';
 export function setupSocketIO(server) {
   const io = new Server(server, {
     cors: {
-      origin: true, // Allow all origins
+      origin: process.env.NODE_ENV === 'production' 
+        ? ['https://tastybites-v2.netlify.app', /\.netlify\.app$/]
+        : 'http://localhost:3000',
       methods: ['GET', 'POST'],
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization']
     },
-    path: '/socket.io',
+    path: process.env.NODE_ENV === 'production' 
+      ? '/.netlify/functions/server/socket.io'
+      : '/socket.io',
     allowEIO3: true,
-    serveClient: true,
+    serveClient: false,
     connectTimeout: 45000,
     pingTimeout: 30000,
     pingInterval: 25000,
