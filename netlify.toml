@@ -14,6 +14,10 @@
   external_node_modules = ["express", "socket.io", "@supabase/supabase-js"]
   included_files = ["netlify/functions/**/*"]
 
+[functions.server]
+  included_files = ["server/**"]
+  external_node_modules = ["express", "socket.io"]
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/server/:splat"

@@ -1,6 +1,5 @@
-// Socket.IO configuration with dynamic URL and port detection
+// Socket.IO configuration with Netlify Functions support
 const getBaseUrl = () => {
-  // Get the base URL dynamically from the current window location
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
   const port = window.location.port;
@@ -11,7 +10,7 @@ const getBaseUrl = () => {
   }
 
   // In production (Netlify)
-  return `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+  return `${protocol}//${hostname}`;
 };
 
 export const SOCKET_URL = getBaseUrl();
@@ -24,7 +23,7 @@ export const SOCKET_OPTIONS = {
   reconnectionDelayMax: 5000,
   timeout: 20000,
   autoConnect: false,
-  path: '/socket.io',
+  path: '/.netlify/functions/server/socket.io',
   withCredentials: true,
   forceNew: true,
   secure: window.location.protocol === 'https:',
