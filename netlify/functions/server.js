@@ -1,7 +1,8 @@
 import serverless from 'serverless-http';
-import { app } from '../../server/index.js';
+import { app, io } from './api.js';
 
-// Export the serverless function
-export const handler = serverless(app, {
-  binary: ['application/octet-stream', 'application/x-protobuf', 'application/json'],
-});
+// Create serverless handler for both HTTP and WebSocket
+const handler = serverless(app);
+
+// Export the handler with WebSocket support
+export { handler, io };

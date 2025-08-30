@@ -11,7 +11,8 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["express", "socket.io"]
+  external_node_modules = ["express", "socket.io", "@supabase/supabase-js"]
+  included_files = ["netlify/functions/**/*"]
 
 [[redirects]]
   from = "/api/*"
