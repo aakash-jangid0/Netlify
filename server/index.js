@@ -6,6 +6,7 @@ import path from 'path';
 import http from 'http';
 import { fileURLToPath } from 'url';
 import { setupSocketIO } from './socket.js';
+import serverless from 'serverless-http';
 import menuRoutes from './routes/menu.js';
 import orderRoutes from './routes/orders.js';
 import authRoutes from './routes/auth.js';
@@ -142,17 +143,26 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Create HTTP server for the main API
-const server = http.createServer(app);
+// If we're in a regular Node.js environment (not serverless)
+if (process.env.NODE_ENV !== 'production') {
+  // Create HTTP server for the main API
+  const server = http.createServer(app);
 
-// Also setup Socket.IO on the main server as a fallback
-setupSocketIO(server);
+  // Also setup Socket.IO on the main server as a fallback
+  setupSocketIO(server);
 
-// Start servers
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, async () => {
-  console.log(`HTTP Server running on port ${PORT}`);
-  
-  // Start the WebSocket server after the HTTP server is running
-  await startSocketServer();
-});
+  // Start servers
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, async () => {
+    console.log(`HTTP Server running on port ${PORT}`);
+    
+    // Start the WebSocket server after the HTTP server is running
+    await startSocketServer();
+  });
+}
+
+// Export the serverless handler
+export const handler = serverless(app);
+
+// Export the Express app
+export default app;

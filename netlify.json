@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "netlify/functions/server.js": {
+      "maxDuration": 30
+    }
+  }
+}
