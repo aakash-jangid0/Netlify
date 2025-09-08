@@ -59,9 +59,10 @@ export function useMenuItems(pageSize = 10) {
           setHasMoreItems(data.length === pageSize);
         }
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching menu items:', err);
-        setError(err.message);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch menu items';
+        setError(errorMessage);
         setMenuItems([]);
       } finally {
         setIsLoading(false);
@@ -116,9 +117,10 @@ export function useMenuItems(pageSize = 10) {
       } else {
         setHasMoreItems(false);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading more menu items:', err);
-      setError(err.message);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load more menu items';
+      setError(errorMessage);
     } finally {
       fetchInProgress.current = false;
     }

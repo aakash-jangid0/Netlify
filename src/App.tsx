@@ -3,7 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WebsiteSettingsProvider } from './contexts/WebsiteSettingsContext';
-import { SocketProvider } from './context/socket/SocketProvider';
+import { SocketProvider } from './context/SocketContext';
 import Layout from './components/layout/Layout';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import NetworkStatus from './components/common/NetworkStatus.jsx';

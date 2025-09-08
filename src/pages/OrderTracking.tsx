@@ -189,12 +189,12 @@ function OrderTracking() {
   useRealtimeSync({
     table: 'orders',
     filter: `id=eq.${orderId}`,
-    onUpdate: (updatedOrder) => {
+    onUpdate: (updatedOrder: TrackingOrder) => {
       setOrder(prev => {
-        if (prev?.status !== updatedOrder.status) {
+        if (prev && prev.status !== updatedOrder.status) {
           toast.success(`Order status updated to ${updatedOrder.status}`);
         }
-        return { ...prev, ...updatedOrder };
+        return prev ? { ...prev, ...updatedOrder } : updatedOrder;
       });
     }
   });
@@ -644,9 +644,10 @@ function OrderTracking() {
       )}
 
       {/* Support Chat Modal - Only for registered customers */}
-      {order && isRegisteredCustomer && (
+      {order && isRegisteredCustomer && user && (
         <SupportChatModal
           orderId={order.id}
+          customerId={user.id}
           isOpen={showChatModal}
           onClose={() => setShowChatModal(false)}
         />

@@ -1,9 +1,12 @@
 const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-export const SOCKET_URL = isDevelopment ? 'http://localhost:5000' : window.location.origin;
+// In production, we need to use the Netlify Function URL which is at /.netlify/functions/server
+export const SOCKET_URL = isDevelopment 
+  ? 'http://localhost:5000' 
+  : `${window.location.protocol}//${window.location.host}/.netlify/functions/server`;
 
 export const SOCKET_OPTIONS = {
-  path: isDevelopment ? '/socket.io' : '/.netlify/functions/server/socket.io',
+  path: '/socket.io',
   transports: ['websocket', 'polling'],
   autoConnect: false,
   reconnection: true,

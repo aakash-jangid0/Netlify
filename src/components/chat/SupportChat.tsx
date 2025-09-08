@@ -1,70 +1,60 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useSupportChat } from '../../hooks/useSupportChat';
+import { useSupportChat } from '../../hooks/useServerlessSupportChat';
 import { formatDistanceToNow } from 'date-fns';
 import { Send, ArrowLeft, MessageCircle, User, Smile } from 'lucide-react';
 
+import { Message, SupportChat as ISupportChat } from '../../hooks/useServerlessSupportChat';
+
 interface SupportChatProps {
   orderId: string;
+  customerId: string;
   onClose?: () => void;
 }
 
-export const SupportChat: React.FC<SupportChatProps> = ({ orderId, onClose }) => {
-  const [issue, setIssue] = useState('');
+export const SupportChat: React.FC<SupportChatProps> = ({ 
+  orderId, 
+  customerId, 
+  onClose 
+}) => {
   const [newMessage, setNewMessage] = useState('');
+  const [category, setCategory] = useState('');
+  const [issue, setIssue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const {
-    chatId,
     messages,
-    status,
+    isLoading,
     error,
-    loading,
-    startChat,
     sendMessage,
     markMessagesAsRead,
-    currentChat
-  } = useSupportChat(orderId);
+    currentChat,
+    chatId,
+    status,
+    startChat
+  }: {
+    messages: Message[];
+    isLoading: boolean;
+    error: string | null;
+    sendMessage: (message: string) => void;
+    markMessagesAsRead: () => void;
+    currentChat: ISupportChat | null;
+    chatId: string | null;
+    status: string;
+    startChat: (issue: string, category: string) => Promise<void>;
+  } = useSupportChat(orderId, customerId);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Mark messages as read when chat is mounted
+  // Mark messages as read when messages change
   useEffect(() => {
-    if (chatId) {
+    if (messages.length > 0) {
       markMessagesAsRead();
     }
-  }, [chatId, markMessagesAsRead]);
-
-  // Debug: Log currentChat data
-  useEffect(() => {
-    console.log('SupportChat - currentChat data:', {
-      currentChat,
-      category: currentChat?.category,
-      issue: currentChat?.issue,
-      chatId,
-      hasMessages: messages.length > 0
-    });
-  }, [currentChat, chatId, messages.length]);
-
-  const [category, setCategory] = useState('');
-
-  const handleStartChat = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (issue.trim() && category) {
-      startChat(issue, category);
-    }
-  };
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newMessage.trim()) {
-      sendMessage(newMessage);
-      setNewMessage('');
-    }
-  };
+  }, [markMessagesAsRead, messages]);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -78,6 +68,21 @@ export const SupportChat: React.FC<SupportChatProps> = ({ orderId, onClose }) =>
         return '💳';
       default:
         return '❓';
+    }
+  };
+
+  const handleStartChat = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (category && issue.trim()) {
+      await startChat(issue.trim(), category);
+    }
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newMessage.trim()) {
+      sendMessage(newMessage);
+      setNewMessage('');
     }
   };
 
@@ -236,16 +241,16 @@ export const SupportChat: React.FC<SupportChatProps> = ({ orderId, onClose }) =>
             
             <motion.button
               type="submit"
-              disabled={loading || !category || !issue.trim()}
+              disabled={isLoading || !category || !issue.trim()}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.0 }}
-              whileHover={{ scale: loading || !category || !issue.trim() ? 1 : 1.03, y: -2 }}
-              whileTap={{ scale: loading || !category || !issue.trim() ? 1 : 0.97 }}
+              whileHover={{ scale: isLoading || !category || !issue.trim() ? 1 : 1.03, y: -2 }}
+              whileTap={{ scale: isLoading || !category || !issue.trim() ? 1 : 0.97 }}
               className="w-full bg-gradient-to-r from-blue-500 via-purple-600 to-indigo-600 text-white rounded-2xl py-4 font-bold hover:from-blue-600 hover:via-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl relative overflow-hidden"
             >
               <div className="relative z-10 flex items-center justify-center gap-2">
-                {loading ? (
+                {isLoading ? (
                   <>
                     <motion.div 
                       animate={{ rotate: 360 }}
@@ -261,7 +266,7 @@ export const SupportChat: React.FC<SupportChatProps> = ({ orderId, onClose }) =>
                   </>
                 )}
               </div>
-              {!loading && (
+              {!isLoading && (
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                   initial={{ x: '-100%' }}
@@ -319,28 +324,28 @@ export const SupportChat: React.FC<SupportChatProps> = ({ orderId, onClose }) =>
                   </motion.p>
                 </div>
               </div>
-              {/* Debug info - remove in production */}
+              {/* Chat status info */}
               <div className="mt-4 p-3 bg-gray-100 rounded-lg text-xs text-gray-600">
-                <strong>Debug:</strong> currentChat.category = "{currentChat?.category || 'undefined'}", local category = "{category || 'undefined'}"
+                <span className="font-medium">Status:</span> {status || 'Active'}
               </div>
             </motion.div>
 
             {/* Messages Container */}
             {messages.map((message, index) => (
               <motion.div
-                key={index}
+                key={message.id}
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
                 className={`flex items-end gap-2 ${
-                  message.sender === 'customer' ? 'justify-end' : 'justify-start'
+                  message.sender_id === customerId ? 'justify-end' : 'justify-start'
                 }`}
               >
-                {message.sender !== 'customer' && (
+                {message.sender_id !== customerId && (
                   <motion.div 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ delay: index * 0.1 + 0.2 }}
+                    transition={{ delay: 0.2 }}
                     className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-lg"
                   >
                     <User className="w-4 h-4" />
@@ -349,19 +354,19 @@ export const SupportChat: React.FC<SupportChatProps> = ({ orderId, onClose }) =>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 shadow-lg ${
-                    message.sender === 'customer'
+                    message.sender_id === customerId
                       ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md'
                       : 'bg-white text-gray-900 border border-gray-200 rounded-bl-md'
                   }`}
                 >
-                  <p className="text-sm md:text-base leading-relaxed">{message.content}</p>
+                  <p className="text-sm md:text-base leading-relaxed">{message.message}</p>
                   <div className="flex items-center justify-between mt-2">
                     <p className="text-xs opacity-75 font-medium">
-                      {formatDistanceToNow(new Date(message.timestamp), {
+                      {formatDistanceToNow(new Date(message.sent_at), {
                         addSuffix: true,
                       })}
                     </p>
-                    {message.sender === 'customer' && (
+                    {message.sender_id === customerId && (
                       <div className="flex gap-1">
                         <motion.div 
                           animate={{ scale: [1, 1.2, 1] }}
@@ -377,11 +382,11 @@ export const SupportChat: React.FC<SupportChatProps> = ({ orderId, onClose }) =>
                     )}
                   </div>
                 </motion.div>
-                {message.sender === 'customer' && (
+                {message.sender_id === customerId && (
                   <motion.div 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ delay: index * 0.1 + 0.2 }}
+                    transition={{ delay: 0.2 }}
                     className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-lg"
                   >
                     You

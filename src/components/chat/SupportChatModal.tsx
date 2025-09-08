@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSupportChat } from '../../hooks/useSupportChat';
+import { useSupportChat } from '../../hooks/useServerlessSupportChat';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { 
-  ArrowLeft, 
+  ArrowLeft,
   Send, 
   AlertCircle, 
   CheckCircle, 
@@ -19,11 +19,12 @@ import {
 
 interface SupportChatModalProps {
   orderId: string;
+  customerId: string;
   onClose?: () => void;
   isOpen: boolean;
 }
 
-export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onClose, isOpen }) => {
+export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, customerId, onClose, isOpen }) => {
   const [issue, setIssue] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [category, setCategory] = useState('');
@@ -37,13 +38,12 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
     messages,
     status,
     error,
-    loading,
+    isLoading,
     startChat,
     sendMessage,
     markMessagesAsRead,
-    setTypingStatus,
     currentChat
-  } = useSupportChat(orderId);
+  } = useSupportChat(orderId, customerId);
 
   // Check if the order belongs to a registered customer and if chat has been initialized before
   useEffect(() => {
@@ -143,15 +143,11 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
         chatId,
         status,
         error,
-        loading,
-        messagesCount: messages?.length || 0,
-        isRegisteredCustomer,
-        hasEverInitialized,
-        shouldShowCategoryForm: (hasEverInitialized === false || (hasEverInitialized === true && !chatId)),
-        shouldShowExistingChat: chatId && hasEverInitialized === true
+        isLoading,
+        messagesCount: messages?.length || 0
       });
     }
-  }, [isOpen, orderId, chatId, status, error, loading, messages, isRegisteredCustomer, hasEverInitialized]);
+  }, [isOpen, orderId, chatId, status, error, isLoading, messages, isRegisteredCustomer, hasEverInitialized]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -290,13 +286,13 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5 }}
                     className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-xl text-white backdrop-blur-sm border border-white/20 ${
-                      status === 'active' ? 'bg-green-500/30' : 
+                      status === 'open' ? 'bg-green-500/30' : 
                       status === 'resolved' ? 'bg-blue-500/30' : 'bg-orange-500/30'
                     }`}
                   >
                     <motion.div
-                      animate={{ rotate: status === 'active' ? 360 : 0 }}
-                      transition={{ duration: 2, repeat: status === 'active' ? Infinity : 0 }}
+                      animate={{ rotate: status === 'open' ? 360 : 0 }}
+                      transition={{ duration: 2, repeat: status === 'open' ? Infinity : 0 }}
                     >
                       {getStatusInfo(status).icon}
                     </motion.div>
@@ -537,16 +533,16 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
 
                 <motion.button
                   type="submit"
-                  disabled={loading || !category || !issue.trim()}
+                  disabled={isLoading || !category || !issue.trim()}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.2 }}
-                  whileHover={{ scale: loading || !category || !issue.trim() ? 1 : 1.03, y: -2 }}
-                  whileTap={{ scale: loading || !category || !issue.trim() ? 1 : 0.97 }}
+                  whileHover={{ scale: isLoading || !category || !issue.trim() ? 1 : 1.03, y: -2 }}
+                  whileTap={{ scale: isLoading || !category || !issue.trim() ? 1 : 0.97 }}
                   className="w-full bg-gradient-to-r from-blue-500 via-purple-600 to-indigo-600 text-white rounded-3xl py-5 font-bold text-lg hover:from-blue-600 hover:via-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl relative overflow-hidden group"
                 >
                   <div className="relative z-10 flex items-center justify-center gap-3">
-                    {loading ? (
+                    {isLoading ? (
                       <>
                         <motion.div 
                           animate={{ rotate: 360 }}
@@ -562,7 +558,7 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
                       </>
                     )}
                   </div>
-                  {!loading && (
+                  {!isLoading && (
                     <motion.div
                       className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                       initial={{ x: '-100%' }}
@@ -632,10 +628,10 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
                         damping: 20 
                       }}
                       className={`flex items-end gap-3 ${
-                        message.sender === 'customer' ? 'justify-end' : 'justify-start'
+                        message.sender_id === customerId ? 'justify-end' : 'justify-start'
                       }`}
                     >
-                      {message.sender !== 'customer' && (
+                      {message.sender_id !== customerId && (
                         <motion.div 
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
@@ -648,7 +644,7 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
                       <motion.div
                         whileHover={{ scale: 1.02 }}
                         className={`max-w-[85%] md:max-w-[75%] rounded-3xl px-5 py-4 shadow-lg backdrop-blur-sm border ${
-                          message.sender === 'customer'
+                          message.sender_id === customerId
                             ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-lg border-blue-300 shadow-blue-200'
                             : 'bg-white text-gray-900 border-gray-200 rounded-bl-lg shadow-gray-200'
                         }`}
@@ -659,7 +655,7 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
                           transition={{ delay: index * 0.1 + 0.3 }}
                           className="text-sm md:text-base leading-relaxed mb-3"
                         >
-                          {message.content}
+                          {message.message}
                         </motion.p>
                         <div className="flex items-center justify-between">
                           <motion.p 
@@ -668,11 +664,11 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
                             transition={{ delay: index * 0.1 + 0.4 }}
                             className="text-xs opacity-75 font-medium"
                           >
-                            {formatDistanceToNow(new Date(message.timestamp), {
+                            {formatDistanceToNow(new Date(message.sent_at), {
                               addSuffix: true,
                             })}
                           </motion.p>
-                          {message.sender === 'customer' && (
+                          {message.sender_id === customerId && (
                             <motion.div 
                               initial={{ opacity: 0, scale: 0 }}
                               animate={{ opacity: 1, scale: 1 }}
@@ -693,7 +689,7 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
                           )}
                         </div>
                       </motion.div>
-                      {message.sender === 'customer' && (
+                      {message.sender_id === customerId && (
                         <motion.div 
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
@@ -770,9 +766,9 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, onC
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    onFocus={() => setTypingStatus(true)}
-                    onBlur={() => setTypingStatus(false)}
-                    onKeyDown={() => setTypingStatus(true)}
+                    onFocus={() => {}}
+                    onBlur={() => {}}
+                    onKeyDown={() => {}}
                     placeholder="Type your message..."
                     className="w-full rounded-2xl sm:rounded-3xl border-2 border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-3 sm:py-4 px-4 sm:px-6 pr-12 sm:pr-14 bg-white/80 focus:bg-white transition-all duration-300 text-sm sm:text-base placeholder-gray-400 backdrop-blur-sm hover:border-gray-300 focus:shadow-lg"
                     whileFocus={{ scale: 1.02 }}

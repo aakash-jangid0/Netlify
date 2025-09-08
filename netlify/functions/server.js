@@ -8,11 +8,12 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: '*',
+    origin: true,
     methods: ['GET', 'POST'],
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
   },
-  path: '/.netlify/functions/server/socket.io',
+  path: '/socket.io',
 });
 
 // Middleware

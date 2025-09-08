@@ -61,7 +61,7 @@ export function useOrders() {
   const { user } = useAuth();
 
   // Setup real-time sync for orders
-  useRealtimeSync({
+  useRealtimeSync<Order>({
     table: 'orders',
     onInsert: (newOrder) => {
       setOrders(prev => [newOrder, ...prev]);

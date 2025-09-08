@@ -3,7 +3,7 @@ import { useSocket } from './useSocket';
 import { toast } from 'react-hot-toast';
 
 export const useSocketSetup = () => {
-  const { socket, connect, disconnect } = useSocket();
+  const { socket } = useSocket();
 
   const handleConnect = useCallback(() => {
     console.log('Socket connected successfully');
@@ -13,9 +13,9 @@ export const useSocketSetup = () => {
     console.log('Socket disconnected:', reason);
     if (reason === 'io server disconnect') {
       // Server disconnected us, try to reconnect
-      connect();
+      socket?.connect();
     }
-  }, [connect]);
+  }, [socket]);
 
   const handleConnectError = useCallback((error: Error) => {
     console.error('Socket connection error:', error);

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, AlertCircle } from 'lucide-react';
-import { useSupportChat } from '../hooks/useSupportChat';
+import { useSupportChat } from '../hooks/useServerlessSupportChat';
 import { formatDistanceToNow } from 'date-fns';
 import PageTransition from '../components/common/PageTransition';
 
@@ -17,13 +17,12 @@ const CustomerSupport = () => {
   const {
     chatId,
     messages,
-    status,
     error,
-    loading,
+    isLoading,
     startChat,
     sendMessage,
     markMessagesAsRead
-  } = useSupportChat(orderId || '');
+  } = useSupportChat(orderId || '', 'customer');
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -142,19 +141,19 @@ const CustomerSupport = () => {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           className={`flex ${
-                            message.sender === 'customer' ? 'justify-end' : 'justify-start'
+                            message.sender_id === 'customer' ? 'justify-end' : 'justify-start'
                           }`}
                         >
                           <div
                             className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                              message.sender === 'customer'
+                              message.sender_id === 'customer'
                                 ? 'bg-primary text-white'
                                 : 'bg-gray-100'
                             }`}
                           >
-                            <p className="text-sm">{message.content}</p>
+                            <p className="text-sm">{message.message}</p>
                             <p className="text-xs mt-1 opacity-75">
-                              {formatDistanceToNow(new Date(message.timestamp), {
+                              {formatDistanceToNow(new Date(message.sent_at), {
                                 addSuffix: true,
                               })}
                             </p>
@@ -192,7 +191,7 @@ const CustomerSupport = () => {
             </div>
 
             {/* Loading State */}
-            {loading && (
+            {isLoading && (
               <div className="flex justify-center items-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>

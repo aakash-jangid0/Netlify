@@ -20,9 +20,10 @@ export const useCategories = () => {
         if (error) throw error;
         
         setCategories(data || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching categories:', err);
-        setError(err.message);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch categories';
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }

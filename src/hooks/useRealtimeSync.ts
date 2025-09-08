@@ -2,21 +2,21 @@ import { useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 
-interface RealtimeSyncProps {
+interface RealtimeSyncProps<T> {
   table: string;
-  onInsert?: (record: any) => void;
-  onUpdate?: (record: any) => void;
-  onDelete?: (record: any) => void;
+  onInsert?: (record: T) => void;
+  onUpdate?: (record: T) => void;
+  onDelete?: (record: Partial<T>) => void;
   filter?: string;
 }
 
-export function useRealtimeSync({ 
+export function useRealtimeSync<T extends { id: string | number }>({ 
   table, 
   onInsert, 
   onUpdate, 
   onDelete, 
   filter 
-}: RealtimeSyncProps) {
+}: RealtimeSyncProps<T>) {
   
   useEffect(() => {
     const channel = supabase
@@ -35,13 +35,11 @@ export function useRealtimeSync({
             if ((payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') && 
                 (onUpdate || onInsert)) {
               
-              let query = supabase
+              const { data, error } = await supabase
                 .from(table)
                 .select('*, order_items(*)')
                 .eq('id', payload.new.id)
-                .single();
-                
-              const { data, error } = await query;
+                .single<T>();
               
               if (!error) {
                 if (payload.eventType === 'INSERT' && onInsert) {
@@ -55,7 +53,7 @@ export function useRealtimeSync({
             } 
             // For DELETE, just pass the payload data
             else if (payload.eventType === 'DELETE' && onDelete) {
-              onDelete(payload.old);
+              onDelete(payload.old as Partial<T>);
             }
           } catch (error) {
             console.error(`Error in realtime sync for ${table}:`, error);
