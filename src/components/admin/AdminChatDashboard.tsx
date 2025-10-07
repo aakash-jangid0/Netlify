@@ -433,7 +433,7 @@ export const AdminChatDashboard: React.FC = () => {
                               ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md'
                               : 'bg-white text-gray-800 border border-gray-200 rounded-bl-md'
                           }`}>
-                            <p className="text-sm leading-relaxed">{message.message}</p>
+                            <p className="text-sm leading-relaxed">{message.content}</p>
                             <p className={`text-xs mt-2 ${
                               message.sender_id === 'admin' ? 'text-blue-100' : 'text-gray-500'
                             }`}>

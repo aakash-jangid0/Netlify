@@ -6,9 +6,10 @@ export interface Message {
   id: string;
   chat_id: string;
   sender_id: string;
-  message: string;
+  content: string;
   sent_at: string;
-  status: 'sent' | 'delivered' | 'read';
+  sender_type: 'customer' | 'admin';
+  read?: boolean;
 }
 
 export interface SupportChat {
@@ -17,7 +18,7 @@ export interface SupportChat {
   customer_id: string;
   category?: string;
   issue?: string;
-  status: 'open' | 'closed' | 'resolved';
+  status: 'active' | 'closed' | 'resolved';
   last_message_at: string;
   customer_details?: {
     name: string;
@@ -172,7 +173,7 @@ export function useSupportChat(orderId: string, customerId: string) {
     };
   }, [chatId]);
 
-  const [status] = useState<'open' | 'resolved' | 'closed'>('open');
+  const [status] = useState<'active' | 'resolved' | 'closed'>('active');
 
   const startChat = async (issue: string, category: string) => {
     try {
@@ -190,7 +191,7 @@ export function useSupportChat(orderId: string, customerId: string) {
           orderId,
           issue,
           category,
-          status: 'open'
+          status: 'active'
         }),
       });
 

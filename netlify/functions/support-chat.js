@@ -182,22 +182,26 @@ exports.handler = async (event, context) => {
       let chatId;
 
       if (!existingChat) {
-        // Create new chat
+        // Create new chat - ensure issue and category are provided
+        const chatData = {
+          customer_id: customerId,
+          order_id: orderId,
+          status: status || 'active',
+          last_message_at: new Date().toISOString(),
+          issue: issue || 'General inquiry',
+          category: category || 'general'
+        };
+
         const { data: newChat, error: chatError } = await supabase
           .from('support_chats')
-          .insert([{
-            customer_id: customerId,
-            order_id: orderId,
-            status: status || 'open',
-            last_message_at: new Date().toISOString(),
-            // Add issue and category if provided
-            ...(issue && { issue }),
-            ...(category && { category })
-          }])
+          .insert([chatData])
           .select()
           .single();
 
-        if (chatError) throw chatError;
+        if (chatError) {
+          console.error('Error creating chat:', chatError);
+          throw chatError;
+        }
         chatId = newChat.id;
       } else {
         chatId = existingChat.id;
@@ -217,7 +221,8 @@ exports.handler = async (event, context) => {
           .insert([{
             chat_id: chatId,
             sender_id: customerId,
-            message: messageText,
+            sender_type: 'customer',
+            content: messageText,
             sent_at: new Date().toISOString()
           }]);
 

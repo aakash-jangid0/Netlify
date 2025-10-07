@@ -655,7 +655,7 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, cus
                           transition={{ delay: index * 0.1 + 0.3 }}
                           className="text-sm md:text-base leading-relaxed mb-3"
                         >
-                          {message.message}
+                          {message.content}
                         </motion.p>
                         <div className="flex items-center justify-between">
                           <motion.p 

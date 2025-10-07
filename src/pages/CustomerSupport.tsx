@@ -151,7 +151,7 @@ const CustomerSupport = () => {
                                 : 'bg-gray-100'
                             }`}
                           >
-                            <p className="text-sm">{message.message}</p>
+                            <p className="text-sm">{message.content}</p>
                             <p className="text-xs mt-1 opacity-75">
                               {formatDistanceToNow(new Date(message.sent_at), {
                                 addSuffix: true,
