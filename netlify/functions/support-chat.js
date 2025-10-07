@@ -286,71 +286,55 @@ exports.handler = async (event, context) => {
           searchError: searchError?.code 
         });
 
+        // Find customer record (needed for both new and existing chats)
+        console.log(`🔍 Finding customer by auth user_id: ${customerId}`);
+        let customerRecord = null;
+        
+        // Try to find by user_id first (auth ID)
+        const { data: customerByUserId, error: userIdError } = await supabase
+          .from('customers')
+          .select('id, name, email, phone, user_id')
+          .eq('user_id', customerId)
+          .single();
+
+        if (!userIdError && customerByUserId) {
+          customerRecord = customerByUserId;
+          console.log(`✅ Customer found by user_id: ${customerRecord.name} (${customerRecord.email})`);
+        } else {
+          // Fallback: try to find by id
+          console.log(`🔍 Customer not found by user_id, trying by id: ${customerId}`);
+          const { data: customerById, error: idError } = await supabase
+            .from('customers')
+            .select('id, name, email, phone, user_id')
+            .eq('id', customerId)
+            .single();
+          
+          if (!idError && customerById) {
+            customerRecord = customerById;
+            console.log(`✅ Customer found by id: ${customerRecord.name} (${customerRecord.email})`);
+          }
+        }
+
+        if (!customerRecord) {
+          console.log(`❌ Customer ${customerId} not found by user_id or id`);
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({
+              error: 'Customer not found',
+              message: `Customer with auth ID ${customerId} not found. Please ensure you are logged in with a registered account.`,
+              code: 'CUSTOMER_NOT_FOUND'
+            })
+          };
+        }
+
+        // Use the actual customer ID from database
+        const actualCustomerId = customerRecord.id;
+
         let chatId;
 
         if (!existingChat) {
           console.log('📝 Creating new chat');
-          
-          // First, find customer by user_id (auth ID) since frontend passes auth user ID
-          console.log(`🔍 Finding customer by auth user_id: ${customerId}`);
-          let customerRecord = null;
-          
-          // Try to find by user_id first (auth ID)
-          const { data: customerByUserId, error: userIdError } = await supabase
-            .from('customers')
-            .select('id, name, email, phone, user_id')
-            .eq('user_id', customerId)
-            .single();
-
-          if (!userIdError && customerByUserId) {
-            customerRecord = customerByUserId;
-            console.log(`✅ Customer found by user_id: ${customerRecord.name} (${customerRecord.email})`);
-          } else {
-            // Fallback: try to find by id
-            console.log(`🔍 Customer not found by user_id, trying by id: ${customerId}`);
-            const { data: customerById, error: idError } = await supabase
-              .from('customers')
-              .select('id, name, email, phone, user_id')
-              .eq('id', customerId)
-              .single();
-            
-            if (!idError && customerById) {
-              customerRecord = customerById;
-              console.log(`✅ Customer found by id: ${customerRecord.name} (${customerRecord.email})`);
-            }
-          }
-
-          if (!customerRecord) {
-            console.log(`❌ Customer ${customerId} not found by user_id or id`);
-            
-            // Show debug info
-            const { data: sampleCustomers, error: listError } = await supabase
-              .from('customers')
-              .select('id, name, email, user_id')
-              .limit(3);
-            
-            if (!listError && sampleCustomers) {
-              console.log(`📋 Sample customers in database:`, sampleCustomers.map(c => ({ 
-                id: c.id?.slice(0, 8) + '...', 
-                name: c.name, 
-                email: c.email,
-                user_id: c.user_id ? c.user_id.slice(0, 8) + '...' : 'NULL'
-              })));
-            }
-            
-            return {
-              statusCode: 400,
-              headers,
-              body: JSON.stringify({
-                error: 'Customer not found',
-                message: `Customer with auth ID ${customerId} not found. Please ensure you are logged in with a registered account.`,
-                code: 'CUSTOMER_NOT_FOUND'
-              })
-            };
-          }
-
-          // Use the actual customer ID from database for chat creation
-          const actualCustomerId = customerRecord.id;
 
           // Create new chat - ensure issue and category are provided
           const chatData = {
@@ -395,7 +379,7 @@ exports.handler = async (event, context) => {
         console.log('💬 Adding message to chat');
         const messageData = {
           chat_id: chatId,
-          sender_id: customerId,
+          sender_id: actualCustomerId, // Use actual customer ID instead of auth user ID
           sender_type: 'customer',
           content: messageText,
           sent_at: new Date().toISOString()
