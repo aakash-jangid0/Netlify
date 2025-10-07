@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const supabase = createClient(
-  'https://xeetynafcpofbzpgrsvn.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlZXR5bmFmY3BvZmJ6cGdyc3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2OTA4NzEsImV4cCI6MjA2MTI2Njg3MX0.CBFoP91g402Gag7FvnH7Q0ODYHx-WvolbKB5mVrc40E'
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
 );
 
 async function checkOrders() {
