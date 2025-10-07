@@ -1,10 +1,28 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
+// Initialize Supabase client with debug logging
+let supabase;
+try {
+  console.log('Environment check:', {
+    hasSupabaseUrl: !!process.env.SUPABASE_URL,
+    hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY,
+    supabaseUrl: process.env.SUPABASE_URL ? 'SET' : 'MISSING',
+    supabaseKey: process.env.SUPABASE_ANON_KEY ? 'SET' : 'MISSING'
+  });
+
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+    throw new Error('Missing required environment variables: SUPABASE_URL or SUPABASE_ANON_KEY');
+  }
+
+  supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+  );
+  console.log('Supabase client initialized successfully');
+} catch (error) {
+  console.error('Error initializing Supabase client:', error);
+  // Don't throw here, let the function continue and fail gracefully
+}
 
 // Helper function to get enriched chat data
 async function getEnrichedChatData(chat) {
@@ -47,10 +65,48 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Function invoked:', {
+      method: event.httpMethod,
+      path: event.path,
+      queryParams: event.queryStringParameters,
+      hasBody: !!event.body,
+      headers: Object.keys(event.headers || {})
+    });
+
+    // Check if Supabase is initialized
+    if (!supabase) {
+      console.error('Supabase client not initialized');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Database connection failed',
+          details: 'Supabase client not initialized - check environment variables'
+        })
+      };
+    }
     if (event.httpMethod === 'GET') {
       const params = new URLSearchParams(event.queryStringParameters);
       const role = params.get('role');
       const customerId = params.get('customerId');
+      const healthCheck = params.get('health');
+
+      // Health check endpoint
+      if (healthCheck === 'true') {
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            hasSupabase: !!supabase,
+            environment: {
+              hasSupabaseUrl: !!process.env.SUPABASE_URL,
+              hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY
+            }
+          })
+        };
+      }
 
       // Admin route - get all chats
       if (role === 'admin') {
