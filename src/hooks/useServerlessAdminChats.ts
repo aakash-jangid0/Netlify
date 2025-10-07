@@ -132,11 +132,12 @@ export function useServerlessAdminChats() {
 
       // Send to server
       const { data: newMessage, error } = await supabase
-        .from('support_chat_messages')
+        .from('chat_messages')
         .insert({
           chat_id: chatId,
           sender_id: user.id,
-          message,
+          content: message, // Changed from 'message' to 'content' to match database schema
+          sender_type: 'admin',
           sent_at: new Date().toISOString(),
           read: false
         })
@@ -174,7 +175,7 @@ export function useServerlessAdminChats() {
 
     try {
       const { error } = await supabase
-        .from('support_chat_messages')
+        .from('chat_messages')
         .update({ read: true })
         .eq('chat_id', chatId)
         .eq('sender_id', user.id);

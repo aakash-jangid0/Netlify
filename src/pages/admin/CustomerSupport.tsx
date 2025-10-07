@@ -524,7 +524,7 @@ const CustomerSupport: React.FC = () => {
                 {/* Enhanced Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50/50 to-white">
                   <AnimatePresence>
-                    {selectedChat.messages.map((message, index) => (
+                    {selectedChat.messages && selectedChat.messages.length > 0 ? selectedChat.messages.map((message, index) => (
                       <motion.div
                         key={index}
                         initial={{ opacity: 0, y: 20 }}
@@ -558,7 +558,12 @@ const CustomerSupport: React.FC = () => {
                           </div>
                         </div>
                       </motion.div>
-                    ))}
+                    )) : (
+                      <div className="text-center text-gray-500 py-8">
+                        <MessageCircle className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                        <p>No messages yet</p>
+                      </div>
+                    )}
                   </AnimatePresence>
                   <div ref={messagesEndRef} />
                 </div>
