@@ -8,6 +8,8 @@
   NPM_FLAGS = "--legacy-peer-deps"
   CI = "false"
   VITE_NODE_VERSION = "18"
+  # Allow SUPABASE_ANON_KEY in built files (it's a public key)
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_ANON_KEY,VITE_SUPABASE_ANON_KEY"
   
 # These variables must be set in the Netlify UI
 # SUPABASE_URL = "your-supabase-url"
@@ -27,6 +29,12 @@
   status = 200
   force = true
   
+[[redirects]]
+  from = "/support-chat/*"
+  to = "/.netlify/functions/support-chat/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/support-chat"
   to = "/.netlify/functions/support-chat"
