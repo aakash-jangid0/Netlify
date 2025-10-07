@@ -11,12 +11,15 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["express", "@supabase/supabase-js"]
+  external_node_modules = ["express", "@supabase/supabase-js", "socket.io"]
   included_files = ["netlify/functions/**/*"]
+
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/server/:splat"
+  to = "/.netlify/functions/api/:splat"
   status = 200
 
 [[redirects]]
