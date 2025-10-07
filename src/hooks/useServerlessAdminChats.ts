@@ -105,6 +105,34 @@ export function useServerlessAdminChats() {
     fetchChats();
   }, [fetchChats]);
 
+  // Load messages for a specific chat
+  const loadMessages = useCallback(async (chatId: string) => {
+    try {
+      const { data: messages, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('chat_id', chatId)
+        .order('sent_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Update the specific chat with its messages
+      setChats(prev => prev.map(chat => {
+        if (chat.id === chatId) {
+          return {
+            ...chat,
+            messages: messages || []
+          };
+        }
+        return chat;
+      }));
+
+    } catch (err) {
+      console.error('Error loading messages:', err);
+      toast.error('Failed to load messages');
+    }
+  }, []);
+
   // Send a message
   const sendMessage = useCallback(async (chatId: string, message: string) => {
     if (!user) {
@@ -124,12 +152,12 @@ export function useServerlessAdminChats() {
         read: false
       };
 
-      // Update UI immediately
+      // Update UI immediately with safety check
       setChats(prev => prev.map(chat => {
         if (chat.id === chatId) {
           return {
             ...chat,
-            messages: [...chat.messages, optimisticMessage],
+            messages: [...(chat.messages || []), optimisticMessage], // Ensure messages is an array
             last_message_at: optimisticMessage.sent_at
           };
         }
@@ -246,6 +274,7 @@ export function useServerlessAdminChats() {
     currentChat: getCurrentChat(),
     selectChat,
     sendMessage,
+    loadMessages, // Add loadMessages function
     markMessagesAsRead,
     resolveChat,
     refreshChats: fetchChats

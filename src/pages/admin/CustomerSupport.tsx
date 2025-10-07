@@ -15,6 +15,7 @@ const CustomerSupport: React.FC = () => {
     isLoading,
     error,
     sendMessage,
+    loadMessages, // Add loadMessages
     resolveChat,
     selectChat
   } = useServerlessAdminChats();
@@ -63,6 +64,8 @@ const CustomerSupport: React.FC = () => {
   const handleJoinChat = async (chat: Chat) => {
     setSelectedChatId(chat.id);
     selectChat(chat.id);
+    // Load messages for this chat
+    await loadMessages(chat.id);
   };
 
   const filteredChats = chats.filter(chat => {
