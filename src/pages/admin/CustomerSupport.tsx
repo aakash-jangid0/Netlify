@@ -425,7 +425,7 @@ const CustomerSupport: React.FC = () => {
                             </div>
                             <div className="flex items-center space-x-1 text-xs text-gray-500">
                               <MessageCircle className="w-3 h-3" />
-                              <span>{chat.messages.length}</span>
+                              <span>{chat.messages?.length || 0}</span>
                             </div>
                           </div>
                           <span className="text-xs text-gray-500">
