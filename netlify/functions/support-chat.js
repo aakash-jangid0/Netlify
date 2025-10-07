@@ -1,16 +1,33 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// Initialize Supabase client - wrapped in try/catch for debugging
-let supabase;
-try {
-  supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-  );
-  console.log('Supabase client initialized successfully');
-} catch (error) {
-  console.error('Error initializing Supabase client:', error);
-  // Continue without Supabase to see if we can identify where the error is
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
+// Helper function to get enriched chat data
+async function getEnrichedChatData(chat) {
+  const { data: customer } = await supabase
+    .from('customers')
+    .select('name, email, phone')
+    .eq('id', chat.customer_id)
+    .single();
+
+  const { data: order } = await supabase
+    .from('orders')
+    .select('total_amount, status, created_at')
+    .eq('id', chat.order_id)
+    .single();
+
+  return {
+    ...chat,
+    customer_details: customer || { name: 'Unknown', email: '', phone: '' },
+    order_details: {
+      ...(order || { total_amount: 0, status: 'unknown', created_at: null }),
+      order_number: chat.order_id.slice(-6)
+    }
+  };
 }
 
 exports.handler = async (event, context) => {
@@ -21,12 +38,6 @@ exports.handler = async (event, context) => {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
   };
 
-  // Debug info - log the environment variables (redacted for security)
-  console.log('Environment variables check:', {
-    hasSupabaseUrl: !!process.env.SUPABASE_URL,
-    hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY
-  });
-
   // Handle OPTIONS request
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -36,65 +47,65 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    console.log('Request received:', {
-      method: event.httpMethod,
-      path: event.path,
-      headers: {
-        ...event.headers,
-        authorization: event.headers.authorization ? 'REDACTED' : undefined
-      },
-      queryParams: event.queryStringParameters,
-      hasBody: !!event.body
-    });
-
-    if (event.body) {
-      try {
-        const parsedBody = JSON.parse(event.body);
-        console.log('Parsed request body:', {
-          ...parsedBody,
-          // Redact any sensitive information
-          customerId: parsedBody.customerId ? 'PRESENT' : 'MISSING',
-          orderId: parsedBody.orderId ? 'PRESENT' : 'MISSING',
-          issue: parsedBody.issue ? 'PRESENT' : 'MISSING',
-          category: parsedBody.category ? 'PRESENT' : 'MISSING',
-          message: parsedBody.message ? 'PRESENT' : 'MISSING'
-        });
-      } catch (parseError) {
-        console.error('Error parsing request body:', parseError);
-      }
-    }
-    
-    // For GET requests - return dummy data
     if (event.httpMethod === 'GET') {
-      console.log('Handling GET request');
+      const params = new URLSearchParams(event.queryStringParameters);
+      const role = params.get('role');
+      const customerId = params.get('customerId');
+
+      // Admin route - get all chats
+      if (role === 'admin') {
+        const { data: chats, error } = await supabase
+          .from('support_chats')
+          .select('*')
+          .order('last_message_at', { ascending: false });
+
+        if (error) throw error;
+
+        const enrichedChats = await Promise.all(
+          chats.map(chat => getEnrichedChatData(chat))
+        );
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify(enrichedChats)
+        };
+      }
+
+      // Customer route - get customer's chats
+      if (customerId) {
+        const { data: chats, error } = await supabase
+          .from('support_chats')
+          .select('*')
+          .eq('customer_id', customerId)
+          .order('last_message_at', { ascending: false });
+
+        if (error) throw error;
+
+        const enrichedChats = await Promise.all(
+          chats.map(chat => getEnrichedChatData(chat))
+        );
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify(enrichedChats)
+        };
+      }
+
       return {
-        statusCode: 200,
+        statusCode: 400,
         headers,
-        body: JSON.stringify([
-          { 
-            id: 'debug-chat-id',
-            customer_id: 'customer-123',
-            order_id: 'order-456',
-            status: 'open',
-            last_message_at: new Date().toISOString(),
-            customer_details: { name: 'Debug Customer', email: 'test@example.com', phone: '555-1234' },
-            order_details: { total_amount: 100, status: 'delivered', order_number: '123456' }
-          }
-        ])
+        body: JSON.stringify({ error: 'Missing required parameters' })
       };
     }
 
-    // For POST requests - simple success response
+    // Handle POST request - Create new chat or send message
     if (event.httpMethod === 'POST') {
-      console.log('Handling POST request');
-      
-      // Try to parse the body
       const body = JSON.parse(event.body);
       const { customerId, orderId, message, issue, category, status } = body;
 
-      // Simple validation
       if (!customerId || !orderId || (!message && !issue)) {
-        console.log('Validation failed: Missing required fields');
         return {
           statusCode: 400,
           headers,
@@ -104,30 +115,76 @@ exports.handler = async (event, context) => {
           })
         };
       }
+
+      // Check if chat exists for this order
+      let { data: existingChat } = await supabase
+        .from('support_chats')
+        .select('id')
+        .eq('order_id', orderId)
+        .single();
+
+      let chatId;
+
+      if (!existingChat) {
+        // Create new chat
+        const { data: newChat, error: chatError } = await supabase
+          .from('support_chats')
+          .insert([{
+            customer_id: customerId,
+            order_id: orderId,
+            status: status || 'open',
+            last_message_at: new Date().toISOString(),
+            // Add issue and category if provided
+            ...(issue && { issue }),
+            ...(category && { category })
+          }])
+          .select()
+          .single();
+
+        if (chatError) throw chatError;
+        chatId = newChat.id;
+      } else {
+        chatId = existingChat.id;
+      }
+
+      // Add message to chat - handle both regular message and issue/category case
+      let messageText = message;
       
-      console.log('All validation passed, returning debug success response');
+      // If no message but has issue/category, format them as the first message
+      if (!message && issue) {
+        messageText = `Category: ${category || 'General'}\nIssue: ${issue}`;
+      }
       
-      // Return successful response without actually interacting with Supabase
+      if (messageText) {
+        const { error: messageError } = await supabase
+          .from('chat_messages')
+          .insert([{
+            chat_id: chatId,
+            sender_id: customerId,
+            message: messageText,
+            sent_at: new Date().toISOString()
+          }]);
+
+        if (messageError) throw messageError;
+      }
+
+      // Update last_message_at
+      await supabase
+        .from('support_chats')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', chatId);
+
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ 
-          success: true, 
-          chatId: 'debug-chat-id',
-          message: 'Debug response - function working without database interaction'
-        })
+        body: JSON.stringify({ success: true, chatId })
       };
     }
 
-    // If the method is not GET or POST
-    console.log('Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       headers,
-      body: JSON.stringify({ 
-        error: 'Method not allowed',
-        supportedMethods: ['GET', 'POST', 'OPTIONS']
-      })
+      body: JSON.stringify({ error: 'Method not allowed' })
     };
 
   } catch (error) {
@@ -137,8 +194,7 @@ exports.handler = async (event, context) => {
       headers,
       body: JSON.stringify({ 
         error: 'Internal server error',
-        message: error.message,
-        stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        message: error.message
       })
     };
   }
