@@ -368,6 +368,7 @@ exports.handler = async (event, context) => {
 
       // Add message to chat - handle both regular message and issue/category case
       let messageText = message;
+      let createdMessage = null;
       
       // If no message but has issue/category, format them as the first message
       if (!message && issue) {
@@ -387,16 +388,19 @@ exports.handler = async (event, context) => {
 
         console.log('Message data to insert:', messageData);
 
-        const { error: messageError } = await supabase
+        const { data: newMessage, error: messageError } = await supabase
           .from('chat_messages')
-          .insert([messageData]);
+          .insert([messageData])
+          .select()
+          .single();
 
         if (messageError) {
           console.error('❌ Error adding message:', messageError);
           throw messageError;
         }
         
-        console.log('✅ Message added successfully');
+        createdMessage = newMessage;
+        console.log('✅ Message added successfully:', createdMessage);
       }
 
       // Update last_message_at
@@ -417,7 +421,11 @@ exports.handler = async (event, context) => {
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ success: true, chatId })
+        body: JSON.stringify({ 
+          success: true, 
+          chatId,
+          message: createdMessage // Include the created message for optimistic update replacement
+        })
       };
 
       } catch (postError) {

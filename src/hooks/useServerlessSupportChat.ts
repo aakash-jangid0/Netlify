@@ -99,6 +99,21 @@ export function useSupportChat(orderId: string, customerId: string) {
 
       console.log('📤 Sending message:', { message, customerId, orderId });
 
+      // Create optimistic message for instant UI update
+      const optimisticId = `temp-${Date.now()}`;
+      const optimisticMessage = {
+        id: optimisticId,
+        chat_id: chatId || '',
+        sender_id: customerId,
+        content: message.trim(),
+        sent_at: new Date().toISOString(),
+        sender_type: 'customer' as const,
+        read: false
+      };
+
+      // Update UI immediately with optimistic message
+      setMessages(prev => [...prev, optimisticMessage]);
+
       const response = await fetch(`${NETLIFY_FUNCTION_URL}/support-chat`, {
         method: 'POST',
         headers: {
@@ -115,21 +130,29 @@ export function useSupportChat(orderId: string, customerId: string) {
       console.log('📡 Send message response status:', response.status);
 
       if (!response.ok) {
+        // Remove optimistic message on error
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticId));
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
       console.log('✅ Send message result:', result);
       
-      if (!response.ok) {
+      if (!result.success) {
+        // Remove optimistic message on error
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticId));
         throw new Error(result.error || 'Failed to send message');
       }
 
-      if (result.success) {
-        if (!chatId && result.chatId) {
-          setChatId(result.chatId);
-          await loadChat();
-        }
+      // If chat was just created, set the chat ID and reload
+      if (!chatId && result.chatId) {
+        setChatId(result.chatId);
+        await loadChat(); // This will replace the optimistic message with real messages
+      } else if (result.message) {
+        // Replace optimistic message with real message from server
+        setMessages(prev => prev.map(msg => 
+          msg.id === optimisticId ? result.message : msg
+        ));
       }
     } catch (err) {
       console.error('Error sending message:', err);
