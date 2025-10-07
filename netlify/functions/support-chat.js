@@ -116,13 +116,20 @@ exports.handler = async (event, context) => {
     // Handle POST request - Create new chat or send message
     if (event.httpMethod === 'POST') {
       const body = JSON.parse(event.body);
-      const { customerId, orderId, message } = body;
+      const { customerId, orderId, message, issue, category, status } = body;
 
-      if (!customerId || !orderId || !message) {
+      // Check if we're creating a new chat (issue & category) or sending a message
+      const isNewChat = issue && category;
+      const isMessage = message && !isNewChat;
+
+      if (!customerId || !orderId || (!message && !issue)) {
         return {
           statusCode: 400,
           headers,
-          body: JSON.stringify({ error: 'Missing required fields' })
+          body: JSON.stringify({ 
+            error: 'Missing required fields',
+            details: 'Must provide either message or issue with customerId and orderId'
+          })
         };
       }
 
@@ -142,8 +149,11 @@ exports.handler = async (event, context) => {
           .insert([{
             customer_id: customerId,
             order_id: orderId,
-            status: 'open',
-            last_message_at: new Date().toISOString()
+            status: status || 'open',
+            last_message_at: new Date().toISOString(),
+            // Add issue and category if provided
+            ...(issue && { issue }),
+            ...(category && { category })
           }])
           .select()
           .single();
@@ -154,17 +164,26 @@ exports.handler = async (event, context) => {
         chatId = existingChat.id;
       }
 
-      // Add message to chat
-      const { error: messageError } = await supabase
-        .from('chat_messages')
-        .insert([{
-          chat_id: chatId,
-          sender_id: customerId,
-          message: message,
-          sent_at: new Date().toISOString()
-        }]);
+      // Add message to chat - handle both regular message and issue/category case
+      let messageText = message;
+      
+      // If no message but has issue/category, format them as the first message
+      if (!message && issue) {
+        messageText = `Category: ${category || 'General'}\nIssue: ${issue}`;
+      }
+      
+      if (messageText) {
+        const { error: messageError } = await supabase
+          .from('chat_messages')
+          .insert([{
+            chat_id: chatId,
+            sender_id: customerId,
+            message: messageText,
+            sent_at: new Date().toISOString()
+          }]);
 
-      if (messageError) throw messageError;
+        if (messageError) throw messageError;
+      }
 
       // Update last_message_at
       await supabase
