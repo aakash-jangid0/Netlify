@@ -291,36 +291,51 @@ exports.handler = async (event, context) => {
         if (!existingChat) {
           console.log('📝 Creating new chat');
           
-          // First, ensure customer exists in the customers table
-          console.log(`🔍 Checking if customer exists: ${customerId}`);
+          // First, verify customer exists in the customers table
+          console.log(`🔍 Verifying customer exists: ${customerId}`);
           const { data: existingCustomer, error: customerCheckError } = await supabase
             .from('customers')
-            .select('id')
+            .select('id, name, email, phone')
             .eq('id', customerId)
             .single();
 
-          if (customerCheckError && customerCheckError.code === 'PGRST116') {
-            // Customer doesn't exist, create them
-            console.log('👤 Customer not found, creating customer record');
-            const { error: customerCreateError } = await supabase
-              .from('customers')
-              .insert([{
-                id: customerId,
-                created_at: new Date().toISOString(),
-                // Add any other required customer fields with defaults
-              }]);
-
-            if (customerCreateError) {
-              console.error('❌ Error creating customer:', customerCreateError);
-              throw customerCreateError;
+          if (customerCheckError) {
+            if (customerCheckError.code === 'PGRST116') {
+              // Customer doesn't exist - this is an error since customers should exist before chat
+              console.log(`❌ Customer ${customerId} does not exist in database`);
+              
+              // Let's also check what customers do exist (for debugging)
+              const { data: sampleCustomers, error: listError } = await supabase
+                .from('customers')
+                .select('id, name, email')
+                .limit(5);
+              
+              if (!listError && sampleCustomers) {
+                console.log(`📋 Sample existing customers:`, sampleCustomers.map(c => ({ 
+                  id: c.id?.slice(0, 8) + '...', 
+                  name: c.name, 
+                  email: c.email 
+                })));
+              }
+              
+              return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({
+                  error: 'Customer not found',
+                  message: `Customer ID ${customerId} does not exist. Please ensure the customer is properly registered before starting a support chat.`,
+                  code: 'CUSTOMER_NOT_FOUND'
+                })
+              };
             }
-            console.log('✅ Customer created successfully');
-          } else if (customerCheckError) {
+            
             console.error('❌ Error checking customer:', customerCheckError);
             throw customerCheckError;
-          } else {
-            console.log('✅ Customer exists');
           }
+
+          console.log(`✅ Customer verified: ${existingCustomer.name} (${existingCustomer.email})`);
+          
+          // Customer exists, proceed with chat creation
 
           // Create new chat - ensure issue and category are provided
           const chatData = {
