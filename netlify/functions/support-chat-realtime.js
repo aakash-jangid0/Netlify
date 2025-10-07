@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',

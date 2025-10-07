@@ -1,5 +1,5 @@
 // Simple test function to verify Netlify Functions are working correctly
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
   // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
