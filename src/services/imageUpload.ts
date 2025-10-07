@@ -117,35 +117,32 @@ export class ImageUploadService {
   }
 
   /**
-   * Create storage bucket if it doesn't exist
+   * Initialize storage bucket - checks if bucket exists but doesn't create it
+   * Bucket creation should be done via Supabase migrations for security
    */
-  static async initializeBucket(): Promise<void> {
+  static async checkBucket(): Promise<boolean> {
     try {
       const { data: buckets, error: listError } = await supabase.storage.listBuckets();
       
       if (listError) {
-        throw listError;
+        console.warn('Error checking storage buckets:', listError);
+        return false;
       }
 
       const bucketExists = buckets?.some(bucket => bucket.name === ImageUploadService.BUCKET_NAME);
       
       if (!bucketExists) {
-        const { error: createError } = await supabase.storage.createBucket(ImageUploadService.BUCKET_NAME, {
-          public: true,
-          allowedMimeTypes: ['image/*'],
-          fileSizeLimit: 5242880 // 5MB
-        });
-
-        if (createError) {
-          throw createError;
-        }
+        console.warn(`Storage bucket '${ImageUploadService.BUCKET_NAME}' does not exist. It should be created via Supabase migrations.`);
+        return false;
       }
+      
+      return true;
     } catch (error: any) {
-      console.error('Error initializing storage bucket:', error);
-      // Don't throw here as this is initialization
+      console.error('Error checking storage bucket:', error);
+      return false;
     }
   }
 }
 
-// Initialize bucket on module load
-ImageUploadService.initializeBucket();
+// Check bucket exists on module load
+ImageUploadService.checkBucket();

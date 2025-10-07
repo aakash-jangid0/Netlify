@@ -48,8 +48,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             socketUrl = 'http://localhost:5000';
           }
         } else {
-          // In production, use the same origin as the current page
-          socketUrl = window.location.origin;
+          // In production, use Netlify Functions endpoint with proper path
+          socketUrl = `${window.location.protocol}//${window.location.host}`;
           console.log(`Production mode: Using origin ${socketUrl}`);
         }
         

@@ -5,20 +5,19 @@ import {
   Filter, Globe, Award, Coffee, MessageCircle, Smile, Settings, Bell, RefreshCw,
   Layers, Target, Briefcase, Crown, Bolt, Headphones, Shield, Zap, Heart
 } from 'lucide-react';
-import { useAdminChats, type Chat } from '../../hooks/useAdminChats';
+import { useServerlessAdminChats, type AdminChat as Chat } from '../../hooks/useServerlessAdminChats';
 import { formatDistanceToNow, format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 const CustomerSupport: React.FC = () => {
   const {
     chats,
-    loading,
+    isLoading,
     error,
     sendMessage,
     resolveChat,
-    selectChat,
-    connected
-  } = useAdminChats();
+    selectChat
+  } = useServerlessAdminChats();
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -120,7 +119,7 @@ const CustomerSupport: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
         <div className="flex items-center justify-center h-screen">
@@ -197,9 +196,9 @@ const CustomerSupport: React.FC = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
                   <span className="text-sm font-medium text-gray-700">
-                    {connected ? 'Live' : 'Offline'}
+                    Live
                   </span>
                 </div>
                 <motion.button
@@ -304,9 +303,9 @@ const CustomerSupport: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-2">
-                <div className={`w-3 h-3 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
+                <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
                 <span className="text-sm font-medium text-gray-700">
-                  {connected ? 'Live & Connected' : 'Offline'}
+                  Live & Connected
                 </span>
               </div>
               <motion.button

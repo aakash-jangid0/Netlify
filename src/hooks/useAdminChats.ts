@@ -49,12 +49,22 @@ export const useAdminChats = () => {
   useEffect(() => {
     const initSocket = async () => {
       try {
-        // Get socket port from server
-        const response = await fetch('http://localhost:5000/api/socket-port');
-        const { port } = await response.json();
+        const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         
-        const socketInstance = io(`http://localhost:${port}`, {
-          transports: ['websocket'],
+        let socketUrl;
+        if (isDevelopment) {
+          // Get socket port from server in development
+          const response = await fetch('http://localhost:5000/api/socket-port');
+          const { port } = await response.json();
+          socketUrl = `http://localhost:${port}`;
+        } else {
+          // Use the current origin in production
+          socketUrl = window.location.origin;
+        }
+        
+        const socketInstance = io(socketUrl, {
+          path: isDevelopment ? '/socket.io' : '/.netlify/functions/server/socket.io',
+          transports: ['websocket', 'polling'],
           timeout: 10000,
         });
 
