@@ -47,7 +47,15 @@ export function useSupportChat(orderId: string, customerId: string) {
       setError(null);
 
       const response = await fetch(`${NETLIFY_FUNCTION_URL}/support-chat?customerId=${customerId}`);
-      const chats = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Ensure data is an array before calling .find()
+      const chats = Array.isArray(data) ? data : [];
       
       const chat = chats.find((c: SupportChat) => c.order_id === orderId);
       
@@ -93,6 +101,10 @@ export function useSupportChat(orderId: string, customerId: string) {
           message: message.trim()
         }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
       const result = await response.json();
       
@@ -182,11 +194,11 @@ export function useSupportChat(orderId: string, customerId: string) {
         }),
       });
 
-      const result = await response.json();
-      
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to start chat');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+
+      const result = await response.json();
 
       if (result.success) {
         setChatId(result.chatId);
