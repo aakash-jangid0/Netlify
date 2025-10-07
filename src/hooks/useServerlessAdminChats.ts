@@ -14,7 +14,7 @@ export interface AdminChat {
   messages: Array<{
     id: string;
     sender_id: string;
-    message: string;
+    content: string; // Changed from 'message' to 'content' to match database
     sent_at: string;
     read: boolean;
   }>;
@@ -84,7 +84,13 @@ export function useServerlessAdminChats() {
 
       if (error) throw error;
 
-      setChats(chats || []);
+      // Ensure each chat has a messages array (even if empty initially)
+      const chatsWithMessages = (chats || []).map(chat => ({
+        ...chat,
+        messages: chat.messages || [] // Ensure messages is always an array
+      }));
+
+      setChats(chatsWithMessages);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch chats';
       console.error('Error fetching chats:', err);
@@ -113,7 +119,7 @@ export function useServerlessAdminChats() {
       const optimisticMessage = {
         id: optimisticId,
         sender_id: 'admin',
-        message,
+        content: message, // Changed from 'message' to 'content' to match database schema
         sent_at: new Date().toISOString(),
         read: false
       };
