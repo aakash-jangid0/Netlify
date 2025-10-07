@@ -1,5 +1,6 @@
 /* /index.html 200
 
-# Socket.IO WebSocket support
-/.netlify/functions/server/* /.netlify/functions/server/:splat 200
+# API routes
+/api/* /.netlify/functions/api/:splat 200
+/server/* /.netlify/functions/server/:splat 200
 /socket.io/* /.netlify/functions/server/socket.io/:splat 200

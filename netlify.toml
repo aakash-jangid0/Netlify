@@ -9,7 +9,9 @@
   CI = "false"
   VITE_NODE_VERSION = "18"
   # Allow SUPABASE_ANON_KEY in built files (it's a public key)
-  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_ANON_KEY,VITE_SUPABASE_ANON_KEY"
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_ANON_KEY,VITE_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY,JWT_SECRET"
+  # Omit dist folder from secrets scanning as it contains bundled frontend code
+  SECRETS_SCAN_OMIT_PATHS = "dist/**/*,dist/assets/**/*"
   
 # These variables must be set in the Netlify UI
 # SUPABASE_URL = "your-supabase-url"
