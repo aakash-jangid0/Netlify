@@ -6,8 +6,9 @@ try {
   console.log('Environment check:', {
     hasSupabaseUrl: !!process.env.SUPABASE_URL,
     hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY,
-    supabaseUrl: process.env.SUPABASE_URL ? 'SET' : 'MISSING',
-    supabaseKey: process.env.SUPABASE_ANON_KEY ? 'SET' : 'MISSING'
+    supabaseUrl: process.env.SUPABASE_URL || 'MISSING',
+    supabaseKey: process.env.SUPABASE_ANON_KEY ? 'SET' : 'MISSING',
+    allEnvKeys: Object.keys(process.env).filter(key => key.includes('SUPABASE'))
   });
 
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
@@ -289,6 +290,38 @@ exports.handler = async (event, context) => {
 
         if (!existingChat) {
           console.log('📝 Creating new chat');
+          
+          // First, ensure customer exists in the customers table
+          console.log(`🔍 Checking if customer exists: ${customerId}`);
+          const { data: existingCustomer, error: customerCheckError } = await supabase
+            .from('customers')
+            .select('id')
+            .eq('id', customerId)
+            .single();
+
+          if (customerCheckError && customerCheckError.code === 'PGRST116') {
+            // Customer doesn't exist, create them
+            console.log('👤 Customer not found, creating customer record');
+            const { error: customerCreateError } = await supabase
+              .from('customers')
+              .insert([{
+                id: customerId,
+                created_at: new Date().toISOString(),
+                // Add any other required customer fields with defaults
+              }]);
+
+            if (customerCreateError) {
+              console.error('❌ Error creating customer:', customerCreateError);
+              throw customerCreateError;
+            }
+            console.log('✅ Customer created successfully');
+          } else if (customerCheckError) {
+            console.error('❌ Error checking customer:', customerCheckError);
+            throw customerCheckError;
+          } else {
+            console.log('✅ Customer exists');
+          }
+
           // Create new chat - ensure issue and category are provided
           const chatData = {
             customer_id: customerId,
