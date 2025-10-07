@@ -13,7 +13,7 @@ try {
   // Continue without Supabase to see if we can identify where the error is
 }
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',

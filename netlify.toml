@@ -8,6 +8,10 @@
   NPM_FLAGS = "--legacy-peer-deps"
   CI = "false"
   VITE_NODE_VERSION = "18"
+  
+# These variables must be set in the Netlify UI
+# SUPABASE_URL = "your-supabase-url"
+# SUPABASE_ANON_KEY = "your-supabase-anon-key"
 
 [functions]
   node_bundler = "esbuild"
@@ -20,6 +24,18 @@
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+  
+[[redirects]]
+  from = "/support-chat"
+  to = "/.netlify/functions/support-chat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/test-simple"
+  to = "/.netlify/functions/test-simple"
   status = 200
   force = true
 
