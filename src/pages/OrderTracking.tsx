@@ -113,6 +113,7 @@ function OrderTracking() {
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [isRegisteredCustomer, setIsRegisteredCustomer] = useState<boolean | null>(null);
+  const [actualCustomerId, setActualCustomerId] = useState<string | null>(null);
 
   const fetchInvoice = useCallback(async (orderId: string) => {
     try {
@@ -161,6 +162,22 @@ function OrderTracking() {
       // Since only authenticated users can access order tracking, 
       // they are by definition registered customers
       setIsRegisteredCustomer(!!user);
+      
+      // Get the actual customer ID from the customers table
+      if (user && orderData.customer_id) {
+        setActualCustomerId(orderData.customer_id);
+      } else if (user) {
+        // Fallback: find customer by user_id
+        const { data: customerData } = await supabase
+          .from('customers')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (customerData) {
+          setActualCustomerId(customerData.id);
+        }
+      }
       
       // Check if this order has an invoice
       fetchInvoice(orderData.id);
@@ -644,10 +661,10 @@ function OrderTracking() {
       )}
 
       {/* Support Chat Modal - Only for registered customers */}
-      {order && isRegisteredCustomer && user && (
+      {order && isRegisteredCustomer && user && actualCustomerId && (
         <SupportChatModal
           orderId={order.id}
-          customerId={user.id}
+          customerId={actualCustomerId}
           isOpen={showChatModal}
           onClose={() => setShowChatModal(false)}
         />

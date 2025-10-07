@@ -47,6 +47,8 @@ export function useSupportChat(orderId: string, customerId: string) {
       setIsLoading(true);
       setError(null);
 
+      console.log('🔍 Loading chat for:', { orderId, customerId });
+
       const response = await fetch(`${NETLIFY_FUNCTION_URL}/support-chat?customerId=${customerId}`);
       
       if (!response.ok) {
@@ -54,11 +56,13 @@ export function useSupportChat(orderId: string, customerId: string) {
       }
       
       const data = await response.json();
+      console.log('📦 Chat data received:', data);
       
       // Ensure data is an array before calling .find()
       const chats = Array.isArray(data) ? data : [];
       
       const chat = chats.find((c: SupportChat) => c.order_id === orderId);
+      console.log('🎯 Found chat for order:', chat);
       
       if (chat) {
         setChatId(chat.id);
@@ -72,7 +76,10 @@ export function useSupportChat(orderId: string, customerId: string) {
           .order('sent_at', { ascending: true });
         
         if (error) throw error;
+        console.log('💬 Messages loaded:', messages);
         setMessages(messages || []);
+      } else {
+        console.log('❌ No chat found for this order');
       }
     } catch (err) {
       console.error('Error loading chat:', err);
@@ -90,6 +97,8 @@ export function useSupportChat(orderId: string, customerId: string) {
       setIsLoading(true);
       setError(null);
 
+      console.log('📤 Sending message:', { message, customerId, orderId });
+
       const response = await fetch(`${NETLIFY_FUNCTION_URL}/support-chat`, {
         method: 'POST',
         headers: {
@@ -103,11 +112,14 @@ export function useSupportChat(orderId: string, customerId: string) {
         }),
       });
 
+      console.log('📡 Send message response status:', response.status);
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log('✅ Send message result:', result);
       
       if (!response.ok) {
         throw new Error(result.error || 'Failed to send message');
