@@ -664,9 +664,10 @@ export const SupportChatModal: React.FC<SupportChatModalProps> = ({ orderId, cus
                             transition={{ delay: index * 0.1 + 0.4 }}
                             className="text-xs opacity-75 font-medium"
                           >
-                            {formatDistanceToNow(new Date(message.sent_at), {
-                              addSuffix: true,
-                            })}
+                            {message.sent_at && !isNaN(new Date(message.sent_at).getTime()) 
+                              ? formatDistanceToNow(new Date(message.sent_at), { addSuffix: true })
+                              : 'Just now'
+                            }
                           </motion.p>
                           {message.sender_id === customerId && (
                             <motion.div 

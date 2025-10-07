@@ -432,7 +432,10 @@ const CustomerSupport: React.FC = () => {
                             </div>
                           </div>
                           <span className="text-xs text-gray-500">
-                            {formatDistanceToNow(new Date(chat.created_at), { addSuffix: true })}
+                            {chat.created_at && !isNaN(new Date(chat.created_at).getTime()) 
+                              ? formatDistanceToNow(new Date(chat.created_at), { addSuffix: true })
+                              : 'Recently'
+                            }
                           </span>
                         </div>
                       </div>
@@ -556,7 +559,10 @@ const CustomerSupport: React.FC = () => {
                             <p className={`text-xs mt-2 ${
                               message.sender === 'admin' ? 'text-blue-100' : 'text-gray-500'
                             }`}>
-                              {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                              {message.sent_at && !isNaN(new Date(message.sent_at).getTime()) 
+                                ? formatDistanceToNow(new Date(message.sent_at), { addSuffix: true })
+                                : 'Just now'
+                              }
                             </p>
                           </div>
                         </div>
