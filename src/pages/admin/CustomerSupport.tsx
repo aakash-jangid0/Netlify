@@ -528,44 +528,92 @@ const CustomerSupport: React.FC = () => {
                 </div>
 
                 {/* Enhanced Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50/50 to-white">
+                <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gradient-to-b from-gray-50/50 via-white to-blue-50/30 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                   <AnimatePresence>
                     {selectedChat.messages && selectedChat.messages.length > 0 ? selectedChat.messages.map((message, index) => (
                       <motion.div
                         key={index}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
-                        className={`flex ${message.sender === 'admin' ? 'justify-end' : 'justify-start'}`}
+                        initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ 
+                          delay: index * 0.1, 
+                          type: 'spring', 
+                          stiffness: 300,
+                          damping: 20 
+                        }}
+                        className={`flex items-end gap-3 ${
+                          message.sender_type === 'admin' ? 'justify-end' : 'justify-start'
+                        }`}
                       >
-                        <div className={`max-w-[75%] flex ${message.sender === 'admin' ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2`}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            message.sender === 'admin'
-                              ? 'bg-gradient-to-r from-blue-500 to-purple-600'
-                              : 'bg-gradient-to-r from-gray-400 to-gray-500'
-                          }`}>
-                            {message.sender === 'admin' ? (
-                              <Shield className="w-4 h-4 text-white" />
-                            ) : (
-                              <User className="w-4 h-4 text-white" />
-                            )}
-                          </div>
-                          <div className={`rounded-2xl p-4 shadow-sm ${
-                            message.sender === 'admin'
-                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md'
-                              : 'bg-white text-gray-800 border border-gray-200 rounded-bl-md'
-                          }`}>
-                            <p className="text-sm leading-relaxed">{message.content}</p>
-                            <p className={`text-xs mt-2 ${
-                              message.sender === 'admin' ? 'text-blue-100' : 'text-gray-500'
-                            }`}>
+                        {message.sender_type !== 'admin' && (
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: index * 0.1 + 0.2 }}
+                            className="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg flex-shrink-0"
+                          >
+                            <User className="w-5 h-5" />
+                          </motion.div>
+                        )}
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          className={`max-w-[85%] md:max-w-[75%] rounded-3xl px-5 py-4 shadow-lg backdrop-blur-sm border ${
+                            message.sender_type === 'admin'
+                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-lg border-blue-300 shadow-blue-200'
+                              : 'bg-white text-gray-900 border-gray-200 rounded-bl-lg shadow-gray-200'
+                          }`}
+                        >
+                          <motion.p 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: index * 0.1 + 0.3 }}
+                            className="text-sm md:text-base leading-relaxed mb-3"
+                          >
+                            {message.content}
+                          </motion.p>
+                          <div className="flex items-center justify-between">
+                            <motion.p 
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: index * 0.1 + 0.4 }}
+                              className="text-xs opacity-75 font-medium"
+                            >
                               {message.sent_at && !isNaN(new Date(message.sent_at).getTime()) 
                                 ? formatDistanceToNow(new Date(message.sent_at), { addSuffix: true })
                                 : 'Just now'
                               }
-                            </p>
+                            </motion.p>
+                            {message.sender_type === 'admin' && (
+                              <motion.div 
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: index * 0.1 + 0.5 }}
+                                className="flex gap-1"
+                              >
+                                <motion.div 
+                                  animate={{ scale: [1, 1.2, 1] }}
+                                  transition={{ duration: 2, repeat: Infinity, delay: 0 }}
+                                  className="w-1.5 h-1.5 bg-white/70 rounded-full"
+                                />
+                                <motion.div 
+                                  animate={{ scale: [1, 1.2, 1] }}
+                                  transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+                                  className="w-1.5 h-1.5 bg-white/70 rounded-full"
+                                />
+                              </motion.div>
+                            )}
                           </div>
-                        </div>
+                        </motion.div>
+                        {message.sender_type === 'admin' && (
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: index * 0.1 + 0.2 }}
+                            className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg flex-shrink-0"
+                          >
+                            <Shield className="w-5 h-5" />
+                          </motion.div>
+                        )}
                       </motion.div>
                     )) : (
                       <div className="text-center text-gray-500 py-8">
@@ -579,30 +627,54 @@ const CustomerSupport: React.FC = () => {
 
                 {/* Enhanced Message Input */}
                 {selectedChat.status === 'active' ? (
-                  <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200 bg-white">
-                    <div className="flex space-x-3">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="p-4 border-t border-gray-200/50 bg-gradient-to-r from-white via-blue-50/30 to-white backdrop-blur-md"
+                  >
+                    <form onSubmit={handleSendMessage} className="flex items-end gap-4">
                       <div className="flex-1 relative">
-                        <input
+                        <motion.input
                           type="text"
                           value={newMessage}
                           onChange={(e) => setNewMessage(e.target.value)}
                           placeholder="Type your response to help the customer..."
-                          className="w-full px-4 py-2.5 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 placeholder-gray-500"
+                          className="w-full rounded-3xl border-2 border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-4 px-6 pr-14 bg-white/80 focus:bg-white transition-all duration-300 text-base placeholder-gray-400 backdrop-blur-sm hover:border-gray-300 focus:shadow-lg"
+                          whileFocus={{ scale: 1.02 }}
                         />
-                        <Smile className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.1, rotate: 10 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors duration-200 p-1"
+                        >
+                          <Smile className="w-6 h-6" />
+                        </motion.button>
                       </div>
                       <motion.button
                         type="submit"
                         disabled={!newMessage.trim()}
-                        className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg flex items-center space-x-2"
-                        whileHover={{ scale: newMessage.trim() ? 1.05 : 1 }}
-                        whileTap={{ scale: newMessage.trim() ? 0.95 : 1 }}
+                        whileHover={{ scale: newMessage.trim() ? 1.1 : 1, rotate: newMessage.trim() ? 15 : 0 }}
+                        whileTap={{ scale: newMessage.trim() ? 0.9 : 1 }}
+                        className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-4 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-xl disabled:shadow-none hover:shadow-2xl flex items-center justify-center"
                       >
-                        <Send className="w-4 h-4" />
-                        <span>Send</span>
+                        <Send className="w-6 h-6" />
                       </motion.button>
-                    </div>
-                  </form>
+                    </form>
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="flex items-center justify-between mt-4 text-xs text-gray-500"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span>Customer can see your typing...</span>
+                      </div>
+                      <span>Press Enter to send • Shift+Enter for new line</span>
+                    </motion.div>
+                  </motion.div>
                 ) : (
                   <div className="p-4 border-t border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50 text-center">
                     <div className="flex items-center justify-center space-x-2 text-emerald-700">

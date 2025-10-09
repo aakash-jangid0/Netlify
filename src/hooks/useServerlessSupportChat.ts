@@ -186,6 +186,8 @@ export function useSupportChat(orderId: string, customerId: string) {
   useEffect(() => {
     if (!chatId) return;
 
+    console.log('🔄 Setting up real-time subscription for chat:', chatId);
+
     const channel = supabase
       .channel(`chat:${chatId}`)
       .on(
@@ -197,13 +199,30 @@ export function useSupportChat(orderId: string, customerId: string) {
           filter: `chat_id=eq.${chatId}`
         },
         (payload) => {
+          console.log('📨 Real-time message received:', payload.new);
           const newMessage = payload.new as Message;
-          setMessages(prev => [...prev, newMessage]);
+          
+          // Only add if it's not from this customer (to avoid duplicate optimistic updates)
+          if (newMessage.sender_type === 'admin') {
+            console.log('👨‍💼 Adding admin message to customer chat');
+            setMessages(prev => {
+              // Check if message already exists to prevent duplicates
+              const exists = prev.some(msg => msg.id === newMessage.id);
+              if (exists) {
+                console.log('⚠️ Message already exists, skipping');
+                return prev;
+              }
+              return [...prev, newMessage];
+            });
+          } else {
+            console.log('👤 Customer message (probably optimistic update)');
+          }
         }
       )
       .subscribe();
 
     return () => {
+      console.log('🔌 Unsubscribing from real-time for chat:', chatId);
       supabase.removeChannel(channel);
     };
   }, [chatId]);

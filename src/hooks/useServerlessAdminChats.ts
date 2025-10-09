@@ -14,6 +14,7 @@ export interface AdminChat {
   messages: Array<{
     id: string;
     sender_id: string;
+    sender_type: 'customer' | 'admin'; // Add sender_type field
     content: string; // Changed from 'message' to 'content' to match database
     sent_at: string;
     read: boolean;
@@ -104,6 +105,59 @@ export function useServerlessAdminChats() {
   useEffect(() => {
     fetchChats();
   }, [fetchChats]);
+
+  // Real-time subscription for new messages across all chats
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('🔄 Admin: Setting up real-time subscription for messages');
+
+    const channel = supabase
+      .channel('admin-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages'
+        },
+        (payload) => {
+          console.log('📨 Admin: Real-time message received:', payload.new);
+          const newMessage = payload.new;
+          
+          // Only process customer messages (admin messages are handled optimistically)
+          if (newMessage.sender_type === 'customer') {
+            console.log('👤 Admin: Adding customer message to chat');
+            
+            setChats(prev => prev.map(chat => {
+              if (chat.id === newMessage.chat_id) {
+                // Check if message already exists to prevent duplicates
+                const messageExists = chat.messages.some(msg => msg.id === newMessage.id);
+                if (messageExists) {
+                  console.log('⚠️ Admin: Message already exists, skipping');
+                  return chat;
+                }
+                
+                return {
+                  ...chat,
+                  messages: [...(chat.messages || []), newMessage],
+                  last_message_at: newMessage.sent_at
+                };
+              }
+              return chat;
+            }));
+          } else {
+            console.log('👨‍💼 Admin: Admin message (probably optimistic update)');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔌 Admin: Unsubscribing from real-time messages');
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   // Load messages for a specific chat
   const loadMessages = useCallback(async (chatId: string) => {
