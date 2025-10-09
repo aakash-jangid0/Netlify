@@ -66,6 +66,8 @@ export function useServerlessAdminChats() {
       setIsLoading(true);
       setError(null);
 
+      console.log('📊 Admin: Fetching chats with messages...');
+
       const { data: chats, error } = await supabase
         .from('support_chats')
         .select(`
@@ -85,13 +87,32 @@ export function useServerlessAdminChats() {
 
       if (error) throw error;
 
-      // Ensure each chat has a messages array (even if empty initially)
-      const chatsWithMessages = (chats || []).map(chat => ({
-        ...chat,
-        messages: chat.messages || [] // Ensure messages is always an array
+      console.log('📋 Admin: Fetched chats:', chats?.length || 0);
+
+      // Load messages for each chat
+      const chatsWithMessages = await Promise.all((chats || []).map(async (chat) => {
+        try {
+          const { data: messages, error: messagesError } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('chat_id', chat.id)
+            .order('sent_at', { ascending: true });
+
+          if (messagesError) {
+            console.error('Error loading messages for chat', chat.id, messagesError);
+            return { ...chat, messages: [] };
+          }
+
+          console.log(`💬 Admin: Loaded ${messages?.length || 0} messages for chat ${chat.id}`);
+          return { ...chat, messages: messages || [] };
+        } catch (err) {
+          console.error('Error loading messages for chat', chat.id, err);
+          return { ...chat, messages: [] };
+        }
       }));
 
       setChats(chatsWithMessages);
+      console.log('✅ Admin: All chats loaded with messages');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch chats';
       console.error('Error fetching chats:', err);
@@ -125,6 +146,14 @@ export function useServerlessAdminChats() {
           console.log('📨 Admin: Real-time message received:', payload.new);
           const newMessage = payload.new;
           
+          console.log('🔍 Admin: Message details:', {
+            id: newMessage.id,
+            sender_type: newMessage.sender_type,
+            sender_id: newMessage.sender_id,
+            content: newMessage.content,
+            chat_id: newMessage.chat_id
+          });
+          
           // Only process customer messages (admin messages are handled optimistically)
           if (newMessage.sender_type === 'customer') {
             console.log('👤 Admin: Adding customer message to chat');
@@ -138,6 +167,7 @@ export function useServerlessAdminChats() {
                   return chat;
                 }
                 
+                console.log('✅ Admin: Adding new customer message');
                 return {
                   ...chat,
                   messages: [...(chat.messages || []), newMessage],
@@ -147,11 +177,13 @@ export function useServerlessAdminChats() {
               return chat;
             }));
           } else {
-            console.log('👨‍💼 Admin: Admin message (probably optimistic update)');
+            console.log('👨‍💼 Admin: Admin message (handled optimistically)');
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔌 Admin: Subscription status:', status);
+      });
 
     return () => {
       console.log('🔌 Admin: Unsubscribing from real-time messages');
@@ -200,7 +232,8 @@ export function useServerlessAdminChats() {
       const optimisticId = `temp-${Date.now()}`;
       const optimisticMessage = {
         id: optimisticId,
-        sender_id: 'admin',
+        sender_id: user.id,
+        sender_type: 'admin' as const,
         content: message, // Changed from 'message' to 'content' to match database schema
         sent_at: new Date().toISOString(),
         read: false
@@ -219,6 +252,13 @@ export function useServerlessAdminChats() {
       }));
 
       // Send to server
+      console.log('📤 Admin sending message to server:', {
+        chat_id: chatId,
+        sender_id: user.id,
+        sender_type: 'admin',
+        content: message
+      });
+
       const { data: newMessage, error } = await supabase
         .from('chat_messages')
         .insert({
@@ -232,7 +272,12 @@ export function useServerlessAdminChats() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Admin message insert error:', error);
+        throw error;
+      }
+
+      console.log('✅ Admin message inserted successfully:', newMessage);
 
       // Update UI with real message
       setChats(prev => prev.map(chat => {

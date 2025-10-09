@@ -64,8 +64,8 @@ const CustomerSupport: React.FC = () => {
   const handleJoinChat = async (chat: Chat) => {
     setSelectedChatId(chat.id);
     selectChat(chat.id);
-    // Load messages for this chat
-    await loadMessages(chat.id);
+    // Messages should already be loaded from fetchChats
+    console.log('🔗 Admin: Joining chat with messages:', chat.messages?.length || 0);
   };
 
   const filteredChats = chats.filter(chat => {

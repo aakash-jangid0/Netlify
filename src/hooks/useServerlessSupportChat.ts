@@ -182,9 +182,27 @@ export function useSupportChat(orderId: string, customerId: string) {
     loadChat();
   }, [loadChat]);
 
+  // Test Supabase connection and real-time
+  useEffect(() => {
+    const testRealtimeConnection = async () => {
+      try {
+        console.log('🧪 Testing Supabase real-time connection...');
+        const { data } = await supabase.from('chat_messages').select('count').limit(1);
+        console.log('✅ Supabase connection working, count:', data);
+      } catch (error) {
+        console.error('❌ Supabase connection error:', error);
+      }
+    };
+    
+    testRealtimeConnection();
+  }, []);
+
   // Subscribe to new messages
   useEffect(() => {
-    if (!chatId) return;
+    if (!chatId) {
+      console.log('❌ No chatId, skipping real-time subscription');
+      return;
+    }
 
     console.log('🔄 Setting up real-time subscription for chat:', chatId);
 
@@ -202,7 +220,15 @@ export function useSupportChat(orderId: string, customerId: string) {
           console.log('📨 Real-time message received:', payload.new);
           const newMessage = payload.new as Message;
           
-          // Only add if it's not from this customer (to avoid duplicate optimistic updates)
+          console.log('🔍 Message details:', {
+            id: newMessage.id,
+            sender_type: newMessage.sender_type,
+            sender_id: newMessage.sender_id,
+            content: newMessage.content,
+            chat_id: newMessage.chat_id
+          });
+          
+          // Add admin messages immediately, customer messages only if not optimistic
           if (newMessage.sender_type === 'admin') {
             console.log('👨‍💼 Adding admin message to customer chat');
             setMessages(prev => {
@@ -212,14 +238,30 @@ export function useSupportChat(orderId: string, customerId: string) {
                 console.log('⚠️ Message already exists, skipping');
                 return prev;
               }
+              console.log('✅ Adding new admin message');
               return [...prev, newMessage];
             });
-          } else {
-            console.log('👤 Customer message (probably optimistic update)');
+          } else if (newMessage.sender_type === 'customer') {
+            // Only add customer messages if they don't have temp IDs (not optimistic)
+            if (!newMessage.id.startsWith('temp-')) {
+              console.log('👤 Adding real customer message');
+              setMessages(prev => {
+                const exists = prev.some(msg => msg.id === newMessage.id);
+                if (exists) {
+                  console.log('⚠️ Customer message already exists, skipping');
+                  return prev;
+                }
+                return [...prev, newMessage];
+              });
+            } else {
+              console.log('👤 Customer message (optimistic update, skipping)');
+            }
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔌 Subscription status:', status);
+      });
 
     return () => {
       console.log('🔌 Unsubscribing from real-time for chat:', chatId);
