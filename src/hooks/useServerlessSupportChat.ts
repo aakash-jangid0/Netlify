@@ -146,13 +146,24 @@ export function useSupportChat(orderId: string, customerId: string) {
 
       // If chat was just created, set the chat ID and reload
       if (!chatId && result.chatId) {
+        console.log('🆕 New chat created, setting chatId and reloading');
         setChatId(result.chatId);
         await loadChat(); // This will replace the optimistic message with real messages
       } else if (result.message) {
+        console.log('🔄 Replacing optimistic message with real message:', {
+          optimisticId,
+          realMessage: result.message
+        });
         // Replace optimistic message with real message from server
-        setMessages(prev => prev.map(msg => 
-          msg.id === optimisticId ? result.message : msg
-        ));
+        setMessages(prev => {
+          const updated = prev.map(msg => 
+            msg.id === optimisticId ? result.message : msg
+          );
+          console.log('📝 Messages after replacement:', updated.length);
+          return updated;
+        });
+      } else {
+        console.log('⚠️ No message returned from server, keeping optimistic message');
       }
     } catch (err) {
       console.error('Error sending message:', err);
@@ -228,7 +239,7 @@ export function useSupportChat(orderId: string, customerId: string) {
             chat_id: newMessage.chat_id
           });
           
-          // Add admin messages immediately, customer messages only if not optimistic
+          // Add admin messages immediately, don't add customer messages (handled optimistically)
           if (newMessage.sender_type === 'admin') {
             console.log('👨‍💼 Adding admin message to customer chat');
             setMessages(prev => {
@@ -242,20 +253,7 @@ export function useSupportChat(orderId: string, customerId: string) {
               return [...prev, newMessage];
             });
           } else if (newMessage.sender_type === 'customer') {
-            // Only add customer messages if they don't have temp IDs (not optimistic)
-            if (!newMessage.id.startsWith('temp-')) {
-              console.log('👤 Adding real customer message');
-              setMessages(prev => {
-                const exists = prev.some(msg => msg.id === newMessage.id);
-                if (exists) {
-                  console.log('⚠️ Customer message already exists, skipping');
-                  return prev;
-                }
-                return [...prev, newMessage];
-              });
-            } else {
-              console.log('👤 Customer message (optimistic update, skipping)');
-            }
+            console.log('👤 Customer message (handled optimistically, skipping real-time)');
           }
         }
       )
@@ -269,7 +267,43 @@ export function useSupportChat(orderId: string, customerId: string) {
     };
   }, [chatId]);
 
-  const [status] = useState<'active' | 'resolved' | 'closed'>('active');
+  // Subscribe to chat status changes
+  useEffect(() => {
+    if (!chatId) return;
+
+    console.log('🔄 Setting up chat status subscription for chat:', chatId);
+
+    const statusChannel = supabase
+      .channel(`chat-status:${chatId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'support_chats',
+          filter: `id=eq.${chatId}`
+        },
+        (payload) => {
+          console.log('📊 Chat status updated:', payload.new);
+          const updatedChat = payload.new as SupportChat;
+          
+          if (updatedChat.status !== currentChat?.status) {
+            console.log('🔄 Chat status changed from', currentChat?.status, 'to', updatedChat.status);
+            setCurrentChat(prev => prev ? { ...prev, status: updatedChat.status } : null);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔌 Chat status subscription status:', status);
+      });
+
+    return () => {
+      console.log('🔌 Unsubscribing from chat status updates');
+      supabase.removeChannel(statusChannel);
+    };
+  }, [chatId, currentChat?.status]);
+
+  const status = currentChat?.status || 'active';
 
   const startChat = async (issue: string, category: string) => {
     try {

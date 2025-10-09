@@ -252,7 +252,7 @@ export function useServerlessAdminChats() {
       }));
 
       // Send to server
-      console.log('📤 Admin sending message to server:', {
+      console.log('📤 [ADMIN] Sending message to server:', {
         chat_id: chatId,
         sender_id: user.id,
         sender_type: 'admin',
@@ -273,11 +273,22 @@ export function useServerlessAdminChats() {
         .single();
 
       if (error) {
-        console.error('❌ Admin message insert error:', error);
+        console.error('❌ [ADMIN] Message insert error:', error);
+        // Remove optimistic message on error
+        setChats(prev => prev.map(chat => {
+          if (chat.id === chatId) {
+            return {
+              ...chat,
+              messages: chat.messages.filter(msg => msg.id !== optimisticId)
+            };
+          }
+          return chat;
+        }));
         throw error;
       }
 
-      console.log('✅ Admin message inserted successfully:', newMessage);
+      console.log('✅ [ADMIN] Message inserted successfully:', newMessage);
+      console.log('🚀 [ADMIN] This should trigger real-time for customer!');
 
       // Update UI with real message
       setChats(prev => prev.map(chat => {
