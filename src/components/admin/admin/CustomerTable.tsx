@@ -1,6 +1,6 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Tag, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Edit2, CheckCircle, XCircle } from 'lucide-react';
 import { Customer } from '../../../types/Customer';
 
 interface CustomerTableProps {
@@ -8,6 +8,7 @@ interface CustomerTableProps {
   selectedCustomers: string[];
   onSelect: (ids: string[]) => void;
   onEdit: (customer: Customer) => void;
+  onView?: (customerId: string) => void;
   onStatusChange: (customerId: string, newStatus: Customer['status']) => void;
   filters: {
     search: string;
@@ -25,6 +26,7 @@ export default function CustomerTable({
   selectedCustomers,
   onSelect,
   onEdit,
+  onView,
   onStatusChange,
   filters,
   view
@@ -105,7 +107,8 @@ export default function CustomerTable({
               layout
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-lg shadow p-4 border border-gray-100"
+              className="bg-white rounded-lg shadow p-4 border border-gray-100 hover:shadow-md cursor-pointer transition-shadow"
+              onClick={() => onView?.(customer.id)}
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -143,16 +146,22 @@ export default function CustomerTable({
               
               <div className="mt-4 flex justify-end gap-2">
                 <button
-                  onClick={() => onEdit(customer)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(customer);
+                  }}
                   className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                 >
                   <Edit2 size={16} />
                 </button>
                 <button 
-                  onClick={() => onStatusChange(
-                    customer.id, 
-                    customer.status === 'active' ? 'inactive' : 'active'
-                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStatusChange(
+                      customer.id, 
+                      customer.status === 'active' ? 'inactive' : 'active'
+                    );
+                  }}
                   className="p-1 hover:bg-gray-50 rounded"
                 >
                   {customer.status === 'active' ? <XCircle size={16} className="text-gray-500" /> : <CheckCircle size={16} className="text-green-500" />}
@@ -214,6 +223,8 @@ export default function CustomerTable({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                className="hover:bg-gray-50 cursor-pointer"
+                onClick={() => onView?.(customer.id)}
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
@@ -255,16 +266,22 @@ export default function CustomerTable({
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end gap-2">
                     <button
-                      onClick={() => onEdit(customer)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(customer);
+                      }}
                       className="text-blue-600 hover:text-blue-900"
                     >
                       <Edit2 size={16} />
                     </button>
                     <button 
-                      onClick={() => onStatusChange(
-                        customer.id, 
-                        customer.status === 'active' ? 'inactive' : 'active'
-                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStatusChange(
+                          customer.id, 
+                          customer.status === 'active' ? 'inactive' : 'active'
+                        );
+                      }}
                       className={customer.status === 'active' ? 'text-gray-500' : 'text-green-500'}
                     >
                       {customer.status === 'active' ? <XCircle size={16} /> : <CheckCircle size={16} />}

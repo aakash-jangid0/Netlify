@@ -101,7 +101,7 @@ function StaffStats({ stats }: StaffStatsProps) {
           <div>
             <p className="text-sm text-gray-500">Total Salaries</p>
             <p className="text-2xl font-bold text-orange-600">
-              Rs{stats.totalSalaries.toLocaleString()}
+              ₹{stats.totalSalaries.toLocaleString()}
             </p>
           </div>
           <div className="bg-orange-100 p-3 rounded-lg">

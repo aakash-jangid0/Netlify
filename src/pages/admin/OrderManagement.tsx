@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Package, Phone, AlertTriangle, Download, FileText, Printer, CreditCard } from 'lucide-react';
+import { Clock, Package, Phone, AlertTriangle, Download, FileText, Printer, RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import { viewOrDownloadInvoice, fetchInvoiceByOrderId, printInvoice } from '../../utils/invoiceUtils';
@@ -70,6 +70,7 @@ function OrderManagement() {
           total_amount,
           status,
           payment_status,
+          payment_method,
           created_at,
           order_items (
             id,
@@ -81,6 +82,12 @@ function OrderManagement() {
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
+
+      console.log('Fetched orders with payment status:', data?.map(o => ({
+        id: o.id, 
+        payment_status: o.payment_status,
+        payment_method: o.payment_method
+      })));
 
       const formattedOrders = data.map(order => ({
         ...order,
@@ -111,29 +118,6 @@ function OrderManagement() {
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
-    }
-  };
-  
-  const updatePaymentStatus = async (orderId: string, newStatus: Order['payment_status']) => {
-    try {
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ payment_status: newStatus })
-        .eq('id', orderId);
-
-      if (updateError) throw updateError;
-
-      // Update local state to reflect the new payment status immediately
-      setOrders(currentOrders => 
-        currentOrders.map(order => 
-          order.id === orderId ? { ...order, payment_status: newStatus } : order
-        )
-      );
-
-      toast.success(`Payment status updated to ${newStatus}`);
-    } catch (err) {
-      console.error('Error updating payment status:', err);
-      toast.error('Failed to update payment status');
     }
   };
 
@@ -254,18 +238,31 @@ function OrderManagement() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Order Management</h1>
-        <select
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-          className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-        >
-          <option value="all">All Orders</option>
-          <option value="pending">Pending</option>
-          <option value="preparing">Preparing</option>
-          <option value="ready">Ready</option>
-          <option value="delivered">Delivered</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setIsLoading(true);
+              fetchOrders();
+            }}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
+          >
+            <option value="all">All Orders</option>
+            <option value="pending">Pending</option>
+            <option value="preparing">Preparing</option>
+            <option value="ready">Ready</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
       </div>
 
       {error && (
@@ -314,7 +311,7 @@ function OrderManagement() {
                 <div className={`text-sm ${
                   order.payment_status === 'completed' ? 'text-green-600' : 'text-yellow-600'
                 }`}>
-                  Payment: {order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}
+                  Payment: {order.payment_status === 'completed' ? 'Done' : 'Pending'}
                 </div>
               </div>
             </div>
@@ -323,33 +320,16 @@ function OrderManagement() {
               {order.items.map((item) => (
                 <div key={item.id} className="flex justify-between items-center mb-2">
                   <span>{item.quantity}x {item.name}</span>
-                  <span>Rs{(item.price * item.quantity).toFixed(2)}</span>
+                  <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
               <div className="flex justify-between items-center font-semibold mt-4 pt-4 border-t">
                 <span>Total</span>
-                <span>Rs{order.total_amount.toFixed(2)}</span>
+                <span>₹{order.total_amount.toFixed(2)}</span>
               </div>
             </div>
 
             <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => updatePaymentStatus(
-                  order.id, 
-                  order.payment_status === 'pending' ? 'completed' : 'pending'
-                )}
-                className={`flex items-center px-4 py-2 ${
-                  order.payment_status === 'pending' 
-                    ? 'bg-green-500 hover:bg-green-600' 
-                    : 'bg-yellow-500 hover:bg-yellow-600'
-                } text-white rounded-lg`}
-              >
-                <CreditCard className="w-4 h-4 mr-2" />
-                {order.payment_status === 'pending' 
-                  ? 'Mark as Paid' 
-                  : 'Mark as Pending'
-                }
-              </button>
               <button
                 onClick={() => handleViewInvoice(order.id)}
                 className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"

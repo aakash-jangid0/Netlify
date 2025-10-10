@@ -62,7 +62,7 @@ export const generateOrderId = () => {
 };
 
 export const formatCurrency = (amount: number = 0) => {
-  return `Rs.${amount.toFixed(2)}`;
+  return `₹${amount.toFixed(2)}`;
 };
 
 /**
@@ -75,7 +75,7 @@ export const formatCurrency = (amount: number = 0) => {
 export const updateOrderStatus = async (
   orderId: string, 
   newStatus: string, 
-  onSuccess?: (orderId: string, status: string, data?: any) => void
+  onSuccess?: (orderId: string, status: string, data?: unknown) => void
 ): Promise<boolean> => {
   try {
     // Prepare update data based on new status
@@ -110,9 +110,10 @@ export const updateOrderStatus = async (
     }
     
     return true;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating order status:', error);
-    toast.error(error.message || 'Failed to update order status');
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update order status';
+    toast.error(errorMessage);
     return false;
   }
 };

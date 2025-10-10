@@ -10,20 +10,34 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
+interface RevenueData {
+  name: string;
+  revenue: number;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    dataKey: string;
+  }>;
+  label?: string;
+}
+
 interface RevenueChartProps {
-  data: any[];
+  data: RevenueData[];
   title: string;
   period: string;
 }
 
 function RevenueChart({ data, title, period }: RevenueChartProps) {
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-4 rounded-lg shadow-lg border">
           <p className="text-gray-600">{label}</p>
           <p className="text-lg font-semibold text-orange-500">
-            Rs{payload[0].value.toLocaleString()}
+            ₹{payload[0].value.toLocaleString()}
           </p>
         </div>
       );

@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, User, Mail, Calendar, Phone, MapPin, Download, ChevronDown, Edit, Save, X, Plus, Filter, List, Grid, Tag, DollarSign } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, User, Download, ChevronDown, X, Plus, List, Grid, Tag, Coins, Calendar } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
-import { ENV } from '../../utils/environment';
 import CustomerCard from '../../components/admin/admin/CustomerCard';
 import CustomerTable from '../../components/admin/admin/CustomerTable';
 import CustomerStats from '../../components/admin/admin/CustomerStats';
 import CustomerAnalytics from '../../components/admin/admin/CustomerAnalytics';
-import CustomerModal from '../../components/admin/admin/CustomerModal';
+import CustomerDetailView from '../../components/admin/admin/CustomerDetailView';
 import { Customer, CustomerStats as CustomerStatsType } from '../../types/Customer';
 
 export default function CustomerManagement() {
@@ -17,11 +15,11 @@ export default function CustomerManagement() {
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [view, setView] = useState<'table' | 'cards'>('table');
   const [tagFilter, setTagFilter] = useState<string[]>([]);
@@ -47,33 +45,7 @@ export default function CustomerManagement() {
     newThisMonth: 0
   });
   
-  useEffect(() => {
-    fetchCustomers();
-    setupRealtimeSubscription();
-  }, []);
-  
-  const setupRealtimeSubscription = () => {
-    const subscription = supabase
-      .channel('customers_channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'customers'
-        },
-        () => {
-          fetchCustomers();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  };
-
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -120,9 +92,10 @@ export default function CustomerManagement() {
         setCustomers(customersWithTags);
         calculateStats(customersWithTags);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error in customer handling:', error);
-      setError(`Failed to load customers: ${error.message || 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Failed to load customers: ${errorMessage}`);
       setCustomers([]);
       
       // Set empty stats
@@ -136,7 +109,33 @@ export default function CustomerManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const setupRealtimeSubscription = useCallback(() => {
+    const subscription = supabase
+      .channel('customers_channel')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'customers'
+        },
+        () => {
+          fetchCustomers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchCustomers]);
+
+  useEffect(() => {
+    fetchCustomers();
+    return setupRealtimeSubscription();
+  }, [fetchCustomers, setupRealtimeSubscription]);
   
   // Function to create the customers table if it doesn't exist
   const createCustomersTable = async () => {
@@ -185,10 +184,11 @@ export default function CustomerManagement() {
         throw error;
       }
       toast.success('Sample customers created successfully!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating customers table:', err);
       // If error is because table already exists, that's fine
-      if (!err.message?.includes('already exists')) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      if (!errorMessage.includes('already exists')) {
         throw err;
       }
     }
@@ -287,9 +287,10 @@ export default function CustomerManagement() {
       setEditingCustomer(null);
       resetForm();
       await fetchCustomers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving customer:', error);
-      toast.error(error.message || 'Failed to save customer');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save customer';
+      toast.error(errorMessage);
     }
   };
   
@@ -303,12 +304,21 @@ export default function CustomerManagement() {
       if (error) throw error;
       toast.success(`Customer status updated to ${status}`);
       await fetchCustomers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating customer status:', error);
-      toast.error(error.message || 'Failed to update customer status');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update customer status';
+      toast.error(errorMessage);
     }
   };
   
+  const handleViewCustomer = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+  };
+
+  const handleBackToCustomers = () => {
+    setSelectedCustomerId(null);
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -385,7 +395,12 @@ export default function CustomerManagement() {
     return matchesSearch && matchesStatus && matchesTags && matchesSpent && matchesDate;
   });
 
-  return (
+  return selectedCustomerId ? (
+    <CustomerDetailView 
+      customerId={selectedCustomerId} 
+      onBack={handleBackToCustomers} 
+    />
+  ) : (
     <div className="p-6">
       {/* Header section */}
       <div className="flex justify-between items-center mb-6">
@@ -522,7 +537,7 @@ export default function CustomerManagement() {
         {/* Advanced filters */}
         <div className="flex flex-wrap gap-x-6 gap-y-2 mb-4">
           <div className="flex items-center">
-            <DollarSign className="w-4 h-4 text-gray-400 mr-1" />
+            <Coins className="w-4 h-4 text-gray-400 mr-1" />
             <span className="text-sm text-gray-600 mr-2">Spent Range:</span>
             <input
               type="number"
@@ -595,6 +610,7 @@ export default function CustomerManagement() {
               selectedCustomers={selectedCustomers}
               onSelect={handleSelectCustomers}
               onEdit={handleEditCustomer}
+              onView={handleViewCustomer}
               onStatusChange={handleStatusChange}
               filters={{
                 search: searchQuery,
@@ -615,6 +631,7 @@ export default function CustomerManagement() {
                   key={customer.id}
                   customer={customer}
                   onEdit={handleEditCustomer}
+                  onView={handleViewCustomer}
                   onStatusChange={handleStatusChange}
                 />
               ))

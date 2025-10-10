@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { 
   ArrowLeft, User, Mail, Phone, MapPin, Calendar, Building, 
-  DollarSign, CreditCard, Shield, Clock, FileText, Award, 
-  Activity, Heart, Briefcase, GraduationCap, Moon, Check,
-  AlertTriangle, Users, Edit, Plus, Star
+  Coins, FileText, 
+  Activity, Heart, Briefcase,
+  AlertTriangle, Users, Star
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Staff } from '../../types/staff';
@@ -56,13 +55,13 @@ const StaffProfile = () => {
   const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
   
   // Define fetchStaffDocuments function first
-  const fetchStaffDocuments = async () => {
+  const fetchStaffDocuments = useCallback(async () => {
     try {
       setDocumentsLoading(true);
       
       // Try to fetch a single document to check if table exists
       // This approach avoids querying information_schema which might have permission issues
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('staff_documents')
         .select('id')
         .limit(1)
@@ -103,14 +102,14 @@ const StaffProfile = () => {
       setDocuments([]);
     } finally {
       setDocumentsLoading(false);    }
-  };
-    const fetchPerformanceReviews = async () => {
+  }, [id]);
+    const fetchPerformanceReviews = useCallback(async () => {
     try {
       setReviewsLoading(true);
       
       // Try to fetch a single review to check if table exists
       // This approach avoids querying information_schema which might have permission issues
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('staff_performance_reviews')
         .select('id')
         .limit(1)
@@ -163,7 +162,7 @@ const StaffProfile = () => {
     } finally {
       setReviewsLoading(false);
     }
-  };
+  }, [id]);
 
   // Function declarations are above, now add the useEffect hooks
   
@@ -198,14 +197,14 @@ const StaffProfile = () => {
     if (activeTab === 'documents' && id) {
       fetchStaffDocuments();
     }
-  }, [activeTab, id]);
+  }, [activeTab, id, fetchStaffDocuments]);
   
   // Fetch performance reviews when performance tab is activated
   useEffect(() => {
     if (activeTab === 'performance' && id) {
       fetchPerformanceReviews();
     }
-  }, [activeTab, id]);
+  }, [activeTab, id, fetchPerformanceReviews]);
 
   if (loading) {
     return (
@@ -243,7 +242,7 @@ const StaffProfile = () => {
     try {
       // Try to fetch a single document to check if table exists
       // This approach avoids querying information_schema which might have permission issues
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('staff_documents')
         .select('id')
         .limit(1)
@@ -256,7 +255,7 @@ const StaffProfile = () => {
         return;
       }
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('staff_documents')
         .insert([{
           ...document,
@@ -282,8 +281,8 @@ const StaffProfile = () => {
       }
       toast.success('Document uploaded successfully');
       fetchStaffDocuments();
-    } catch (error: any) {
-      console.error('Error uploading document:', error);      toast.error(`Failed to upload document: ${error.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      console.error('Error uploading document:', error);      toast.error(`Failed to upload document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   
@@ -291,7 +290,7 @@ const StaffProfile = () => {
     try {
       // Try to fetch a single document to check if table exists
       // This approach avoids querying information_schema which might have permission issues
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('staff_documents')
         .select('id')
         .limit(1)
@@ -322,8 +321,8 @@ const StaffProfile = () => {
       }
       toast.success('Document deleted successfully');
       fetchStaffDocuments();
-    } catch (error: any) {
-      console.error('Error deleting document:', error);      toast.error(`Failed to delete document: ${error.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      console.error('Error deleting document:', error);      toast.error(`Failed to delete document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   
@@ -331,7 +330,7 @@ const StaffProfile = () => {
     try {
       // Try to fetch a single document to check if table exists
       // This approach avoids querying information_schema which might have permission issues
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('staff_documents')
         .select('id')
         .limit(1)
@@ -362,8 +361,8 @@ const StaffProfile = () => {
       }
       toast.success(`Document ${isVerified ? 'verified' : 'unverified'} successfully`);
       fetchStaffDocuments();
-    } catch (error: any) {
-      console.error('Error verifying document:', error);      toast.error(`Failed to update document verification status: ${error.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      console.error('Error verifying document:', error);      toast.error(`Failed to update document verification status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   
@@ -372,7 +371,7 @@ const StaffProfile = () => {
     try {
       // Try to fetch a single review to check if table exists
       // This approach avoids querying information_schema which might have permission issues
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('staff_performance_reviews')
         .select('id')
         .limit(1)
@@ -398,7 +397,7 @@ const StaffProfile = () => {
       };
       
       // Insert the review
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('staff_performance_reviews')
         .insert([reviewData])
         .select();
@@ -421,16 +420,16 @@ const StaffProfile = () => {
       toast.success('Review added successfully');
       fetchPerformanceReviews();
       return;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adding review:', error);
-      toast.error(`Failed to add review: ${error.message || 'Unknown error'}`);    }
+      toast.error(`Failed to add review: ${error instanceof Error ? error.message : 'Unknown error'}`);    }
   };
   
   const handleEditReview = async (reviewId: string, reviewUpdates: Partial<Review>): Promise<void> => {
     try {
       // Try to fetch a single review to check if table exists
       // This approach avoids querying information_schema which might have permission issues
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('staff_performance_reviews')
         .select('id')
         .limit(1)
@@ -472,9 +471,9 @@ const StaffProfile = () => {
       toast.success('Review updated successfully');
       fetchPerformanceReviews();
       return;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating review:', error);
-      toast.error(`Failed to update review: ${error.message || 'Unknown error'}`);      throw error; // Re-throw so the component can handle it
+      toast.error(`Failed to update review: ${error instanceof Error ? error.message : 'Unknown error'}`);      throw error; // Re-throw so the component can handle it
     }
   };
   
@@ -482,7 +481,7 @@ const StaffProfile = () => {
     try {
       // Try to fetch a single review to check if table exists
       // This approach avoids querying information_schema which might have permission issues
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('staff_performance_reviews')
         .select('id')
         .limit(1)
@@ -511,16 +510,16 @@ const StaffProfile = () => {
       
       toast.success('Review deleted successfully');
       fetchPerformanceReviews();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting review:', error);
-      toast.error(`Failed to delete review: ${error.message || 'Unknown error'}`);
+      toast.error(`Failed to delete review: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: User },
     { id: 'employment', label: 'Employment', icon: Briefcase },
-    { id: 'compensation', label: 'Compensation', icon: DollarSign },
+    { id: 'compensation', label: 'Compensation', icon: Coins },
     { id: 'performance', label: 'Performance', icon: Activity },
     { id: 'documents', label: 'Documents', icon: FileText }
   ];
@@ -950,14 +949,14 @@ const StaffProfile = () => {
                     <div className="grid grid-cols-2 gap-4">                      <div>
                         <p className="text-xs text-gray-500">Base Salary</p>
                         <p className="text-xl font-bold text-gray-900">
-                          Rs{staff.base_salary?.toLocaleString() || '0'}
+                          ₹{staff.base_salary?.toLocaleString() || '0'}
                         </p>
                       </div>
                       
                       <div>
                         <p className="text-xs text-gray-500">Net Salary</p>
                         <p className="text-xl font-bold text-gray-900">
-                          Rs{staff.net_salary?.toLocaleString() || '0'}
+                          ₹{staff.net_salary?.toLocaleString() || '0'}
                         </p>
                       </div>
                     </div>
@@ -966,7 +965,7 @@ const StaffProfile = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">                    <div className="flex flex-col">
                       <span className="text-xs text-gray-500">Hourly Rate</span>
                       <span className="text-sm font-medium text-gray-900">
-                        Rs{staff.hourly_rate || '0'}/hour
+                        ₹{staff.hourly_rate || '0'}/hour
                       </span>
                     </div>
                     
@@ -979,13 +978,13 @@ const StaffProfile = () => {
                       <div className="flex flex-col">
                       <span className="text-xs text-gray-500">Bonus</span>
                       <span className="text-sm font-medium text-gray-900">
-                        Rs{staff.bonus?.toLocaleString() || '0'}
+                        ₹{staff.bonus?.toLocaleString() || '0'}
                       </span>
                     </div>
                       <div className="flex flex-col">
                       <span className="text-xs text-gray-500">Deductions</span>
                       <span className="text-sm font-medium text-gray-900">
-                        Rs{staff.deductions?.toLocaleString() || '0'}
+                        ₹{staff.deductions?.toLocaleString() || '0'}
                       </span>
                     </div>
                   </div>

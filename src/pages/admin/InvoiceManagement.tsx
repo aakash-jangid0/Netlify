@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Download, Mail, Printer, Calendar, DollarSign, FileText, ChevronDown, Edit, Save, X, Settings } from 'lucide-react';
+import { Search, Download, Mail, Printer, Calendar, Coins, FileText, Edit, Save, X, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Invoice } from '../../types/invoice';
-import { generatePDF, downloadInvoice, emailInvoice, printInvoice, viewOrDownloadInvoice } from '../../utils/invoiceUtils';
+import { emailInvoice, printInvoice, viewOrDownloadInvoice } from '../../utils/invoiceUtils';
 
 export default function InvoiceManagement() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -14,7 +14,6 @@ export default function InvoiceManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -29,26 +28,6 @@ export default function InvoiceManagement() {
     billing_address: '',
     notes: ''
   });
-
-  const handleViewInvoice = async (invoice: Invoice) => {
-    try {
-      const pdfDoc = generatePDF(invoice);
-      window.open(pdfDoc.output('bloburl'));
-    } catch (error) {
-      console.error('Error viewing invoice:', error);
-      toast.error('Failed to load invoice');
-    }
-  };
-
-  const handleDownloadInvoice = async (invoice: Invoice) => {
-    try {
-      downloadInvoice(invoice);
-      toast.success('Invoice downloaded successfully');
-    } catch (error) {
-      console.error('Error downloading invoice:', error);
-      toast.error('Failed to download invoice');
-    }
-  };
   
   // Function to view or download invoice using the unified approach
   const handleViewOrDownloadInvoice = async (invoice: Invoice, download = false) => {
@@ -79,23 +58,7 @@ export default function InvoiceManagement() {
     }
   };
 
-  useEffect(() => {
-    fetchInvoices();
-    setupRealtimeSubscription();
-
-    // Close date filter when clicking outside
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dateFilterRef.current && !dateFilterRef.current.contains(event.target as Node)) {
-        setShowDateFilter(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const setupRealtimeSubscription = () => {
+  const setupRealtimeSubscription = useCallback(() => {
     const subscription = supabase
       .channel('invoice_changes')
       .on(
@@ -116,7 +79,24 @@ export default function InvoiceManagement() {
     return () => {
       subscription.unsubscribe();
     };
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchInvoices();
+    const unsubscribe = setupRealtimeSubscription();
+
+    // Close date filter when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dateFilterRef.current && !dateFilterRef.current.contains(event.target as Node)) {
+        setShowDateFilter(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      unsubscribe();
+    };
+  }, [setupRealtimeSubscription]);
 
   const fetchInvoices = async () => {
     try {
@@ -449,8 +429,8 @@ export default function InvoiceManagement() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm font-medium">
-                          <DollarSign className="w-4 h-4 text-gray-400" />
-                          {invoice.total_amount.toFixed(2)}
+                          <Coins className="w-4 h-4 text-gray-400" />
+                          ₹{invoice.total_amount.toFixed(2)}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

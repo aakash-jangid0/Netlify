@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit, Trash, Tag, X, Check, AlertTriangle, Calendar, DollarSign, Percent, Filter, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Plus, Edit, Trash, Tag, X, AlertTriangle, Calendar, Coins, Percent, Download } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import CouponStats from '../../components/admin/coupons/CouponStats';
@@ -320,10 +320,10 @@ function CouponManagement() {
       resetForm();
       setShowForm(false);
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving coupon:', err);
       
-      if (err.message.includes('duplicate') || err.message.includes('unique')) {
+      if (err instanceof Error && (err.message.includes('duplicate') || err.message.includes('unique'))) {
         toast.error('A coupon with this code already exists');
       } else {
         toast.error('Failed to save coupon');
@@ -355,7 +355,7 @@ function CouponManagement() {
   const formatDiscount = (coupon: Coupon) => {
     return coupon.discount_type === 'percentage' 
       ? `${coupon.discount_value}% off`
-      : `Rs${coupon.discount_value} off`;
+      : `₹${coupon.discount_value} off`;
   };
 
   if (isLoading) {
@@ -519,7 +519,7 @@ function CouponManagement() {
                   {formData.discount_type === 'percentage' ? (
                     <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   ) : (
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   )}
                   <select
                     name="discount_type"
@@ -529,7 +529,7 @@ function CouponManagement() {
                     required
                   >
                     <option value="percentage">Percentage (%)</option>
-                    <option value="fixed_amount">Fixed Amount (Rs)</option>
+                    <option value="fixed_amount">Fixed Amount (₹)</option>
                   </select>
                 </div>
               </div>
@@ -550,7 +550,7 @@ function CouponManagement() {
                     required
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                    {formData.discount_type === 'percentage' ? '%' : 'Rs'}
+                    {formData.discount_type === 'percentage' ? '%' : '₹'}
                   </div>
                 </div>
               </div>
@@ -560,7 +560,7 @@ function CouponManagement() {
                   Min Order Amount
                 </label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="number"
                     name="min_order_amount"
@@ -580,7 +580,7 @@ function CouponManagement() {
                     Max Discount Amount
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input
                       type="number"
                       name="max_discount_amount"
@@ -727,7 +727,7 @@ function CouponManagement() {
       )}
 
       <div className="grid gap-4">
-        {coupons.map((coupon) => (
+        {filteredCoupons.map((coupon) => (
           <motion.div
             key={coupon.id}
             layout
@@ -763,7 +763,7 @@ function CouponManagement() {
                   </div>
                   <h3 className="text-lg font-medium">
                     {formatDiscount(coupon)}
-                    {coupon.min_order_amount ? ` on orders over Rs${coupon.min_order_amount}` : ''}
+                    {coupon.min_order_amount ? ` on orders over ₹${coupon.min_order_amount}` : ''}
                   </h3>
                   {coupon.description && <p className="text-gray-600">{coupon.description}</p>}
                 </div>
@@ -811,14 +811,14 @@ function CouponManagement() {
               {coupon.discount_type === 'percentage' && coupon.max_discount_amount && (
                 <div>
                   <span className="text-gray-500">Max discount:</span>
-                  <div>Rs{coupon.max_discount_amount}</div>
+                  <div>₹{coupon.max_discount_amount}</div>
                 </div>
               )}
             </div>
           </motion.div>
         ))}
 
-        {coupons.length === 0 && (
+        {filteredCoupons.length === 0 && (
           <div className="text-center py-12 bg-white rounded-lg">
             <Tag className="w-12 h-12 mx-auto text-gray-400 mb-4" />
             <p className="text-gray-500">No coupons found</p>

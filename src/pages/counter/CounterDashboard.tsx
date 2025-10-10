@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Package, Clock, User, Box, DollarSign, Plus, Minus, Trash2, AlertCircle, Phone, X, 
-  CheckCircle, XCircle, Filter, RefreshCcw, Printer } from 'lucide-react';
+import { Search, Package, Clock, User, Box, Coins, Plus, Minus, Trash2, AlertCircle, Phone, X, 
+  XCircle, Filter, RefreshCcw, Printer } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import { useOrderManagement } from '../../hooks/useOrderManagement';
@@ -29,7 +29,7 @@ export default function CounterDashboard() {
   
   // Order management state
   const [orders, setOrders] = useState<Array<{
-    id: number;
+    id: string;
     customer_name: string;
     customer_phone: string;
     table_number: string | null;
@@ -40,14 +40,15 @@ export default function CounterDashboard() {
     created_at: string;
     total_amount: number;
     order_items: Array<{
-      id: number;
+      id: string;
       name: string;
       quantity: number;
       price: number;
       notes?: string;
     }>;
   }>>([]);
-  const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'processing' | 'completed' | 'cancelled'>('all');
+  const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'preparing' | 'ready' | 'delivered' | 'cancelled'>('all');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'cash' | 'card' | 'upi'>('all');
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [orderStats, setOrderStats] = useState({
     todayCount: 0,
@@ -55,7 +56,7 @@ export default function CounterDashboard() {
     pendingCount: 0
   });
   const [isOrdersLoading, setIsOrdersLoading] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'menu' | 'orders'>('menu');
 
   // Destructuring only the properties we need
@@ -267,10 +268,15 @@ export default function CounterDashboard() {
       if (orderFilter !== 'all') {
         query = query.eq('status', orderFilter);
       }
+
+      // Apply payment method filter
+      if (paymentFilter !== 'all') {
+        query = query.eq('payment_method', paymentFilter);
+      }
       
       // Apply search filter if present
       if (orderSearchQuery) {
-        query = query.or(`customer_name.ilike.%${orderSearchQuery}%,customer_phone.ilike.%${orderSearchQuery}%,id.eq.${!isNaN(parseInt(orderSearchQuery)) ? orderSearchQuery : 0}`);
+        query = query.or(`customer_name.ilike.%${orderSearchQuery}%,customer_phone.ilike.%${orderSearchQuery}%,id.ilike.%${orderSearchQuery}%`);
       }
       
       const { data, error } = await query.limit(50);
@@ -285,7 +291,7 @@ export default function CounterDashboard() {
     } finally {
       setIsOrdersLoading(false);
     }
-  }, [orderFilter, orderSearchQuery]);
+  }, [orderFilter, paymentFilter, orderSearchQuery]);
   
   // Calculate and update order statistics
   const updateOrderStats = async () => {
@@ -333,7 +339,7 @@ export default function CounterDashboard() {
   };
   
   // Update order status
-  const updateOrderStatus = async (orderId: number, newStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
       const { error } = await supabase
         .from('orders')
@@ -342,7 +348,7 @@ export default function CounterDashboard() {
       
       if (error) throw error;
       
-      toast.success(`Order #${orderId} ${newStatus}`);
+      toast.success(`Order #${orderId.slice(-6)} ${newStatus}`);
       
       // Refresh orders and stats
       fetchOrders();
@@ -353,11 +359,50 @@ export default function CounterDashboard() {
       toast.error(error instanceof Error ? error.message : 'Failed to update order status');
     }
   };
+
+  // Update payment status
+  const updatePaymentStatus = async (orderId: string, newPaymentStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ payment_status: newPaymentStatus })
+        .eq('id', orderId);
+      
+      if (error) throw error;
+      
+      toast.success(`Payment for Order #${orderId.slice(-6)} marked as ${newPaymentStatus}`);
+      
+      // Refresh orders and stats
+      fetchOrders();
+      updateOrderStats();
+      
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update payment status');
+    }
+  };
+
+  // Handle payment status toggle with confirmation
+  const handlePaymentToggle = async (orderId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'completed' || currentStatus === 'paid' ? 'pending' : 'completed';
+    
+    // Show confirmation dialog when changing from paid to unpaid
+    if (newStatus === 'pending') {
+      const confirmed = window.confirm(
+        `Are you sure you want to mark this payment as unpaid? This will change the order status from paid to pending.`
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+    
+    await updatePaymentStatus(orderId, newStatus);
+  };
   
   // Fetch orders on initial load and when filter/search changes
   useEffect(() => {
     fetchOrders();
-  }, [orderFilter, orderSearchQuery, fetchOrders]);
+  }, [orderFilter, paymentFilter, orderSearchQuery, fetchOrders]);
   
   // Update order stats on initial load
   useEffect(() => {
@@ -388,11 +433,11 @@ export default function CounterDashboard() {
             </div>
             <div className="flex items-center gap-3">
               <div className="bg-green-50 p-2 rounded-lg">
-                <DollarSign className="w-5 h-5 text-green-500" />
+                <Coins className="w-5 h-5 text-green-500" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Today's Revenue</p>
-                <p className="text-xl font-semibold">Rs{orderStats.todayRevenue.toFixed(2)}</p>
+                <p className="text-xl font-semibold">₹{orderStats.todayRevenue.toFixed(2)}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -529,7 +574,7 @@ export default function CounterDashboard() {
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-medium">{item.name}</h3>
-                          <span className="text-orange-500 font-semibold">Rs{item.price}</span>
+                          <span className="text-orange-500 font-semibold">₹{item.price}</span>
                         </div>
                         <p className="text-sm text-gray-500 mb-4">{item.description}</p>
                         <button
@@ -552,27 +597,53 @@ export default function CounterDashboard() {
               /* Order Management View */
               <div className="bg-white rounded-lg shadow">
                 {/* Order Filter and Search */}
-                <div className="p-4 border-b flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2 mr-4">
-                    <Filter className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium">Filter:</span>
+                <div className="p-4 border-b">
+                  {/* Status Filter */}
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <div className="flex items-center gap-2 mr-4">
+                      <Filter className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm font-medium">Status:</span>
+                    </div>
+                    
+                    {(['all', 'pending', 'preparing', 'ready', 'delivered', 'cancelled'] as const).map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setOrderFilter(filter)}
+                        className={`px-3 py-1 text-sm rounded-full capitalize ${
+                          orderFilter === filter
+                            ? 'bg-orange-500 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {filter}
+                      </button>
+                    ))}
                   </div>
                   
-                  {(['all', 'pending', 'processing', 'completed', 'cancelled'] as const).map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => setOrderFilter(filter)}
-                      className={`px-3 py-1 text-sm rounded-full capitalize ${
-                        orderFilter === filter
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {filter}
-                    </button>
-                  ))}
+                  {/* Payment Method Filter */}
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <div className="flex items-center gap-2 mr-4">
+                      <Coins className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm font-medium">Payment:</span>
+                    </div>
+                    
+                    {(['all', 'cash', 'card', 'upi'] as const).map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setPaymentFilter(filter)}
+                        className={`px-3 py-1 text-sm rounded-full capitalize ${
+                          paymentFilter === filter
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        } ${filter === 'cash' ? 'ring-2 ring-yellow-400' : ''}`}
+                      >
+                        {filter === 'cash' ? '💰 Cash' : filter === 'card' ? '💳 Card' : filter === 'upi' ? '📱 UPI' : 'All Payments'}
+                      </button>
+                    ))}
+                  </div>
                   
-                  <div className="ml-auto relative">
+                  {/* Search */}
+                  <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                       type="text"
@@ -604,6 +675,7 @@ export default function CounterDashboard() {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date/Time</th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -616,7 +688,7 @@ export default function CounterDashboard() {
                             onClick={() => setSelectedOrder(order.id)}
                           >
                             <td className="px-4 py-3">
-                              <span className="text-sm font-medium"># {order.id}</span>
+                              <span className="text-sm font-medium"># {order.id.slice(-6)}</span>
                             </td>
                             <td className="px-4 py-3">
                               <div>
@@ -631,17 +703,32 @@ export default function CounterDashboard() {
                               </span>
                             </td>
                             <td className="px-4 py-3">
-                              <span className="text-sm font-medium">Rs{order.total_amount.toFixed(2)}</span>
+                              <span className="text-sm font-medium">₹{order.total_amount.toFixed(2)}</span>
                             </td>
                             <td className="px-4 py-3">
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize
                                 ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                  order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                  order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                  'bg-red-100 text-red-800'}`}
+                                  order.status === 'preparing' ? 'bg-blue-100 text-blue-800' :
+                                  order.status === 'ready' ? 'bg-green-100 text-green-800' :
+                                  order.status === 'delivered' ? 'bg-gray-100 text-gray-800' :
+                                  order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'}`}
                               >
                                 {order.status}
                               </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize
+                                  ${order.payment_status === 'completed' || order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 
+                                    order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                    order.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-800'}`}
+                                >
+                                  {order.payment_status === 'completed' || order.payment_status === 'paid' ? 'Paid' : order.payment_status}
+                                </span>
+                                <span className="text-xs text-gray-500">({order.payment_method})</span>
+                              </div>
                             </td>
                             <td className="px-4 py-3">
                               <div>
@@ -651,43 +738,25 @@ export default function CounterDashboard() {
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end items-center space-x-2">
-                                {order.status === 'pending' && (
-                                  <>
-                                    <button
-                                      onClick={(e) => { 
-                                        e.stopPropagation();
-                                        updateOrderStatus(order.id, 'processing');
-                                      }}
-                                      className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                                      title="Mark as Processing"
-                                    >
-                                      <Clock className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => { 
-                                        e.stopPropagation();
-                                        updateOrderStatus(order.id, 'completed');
-                                      }}
-                                      className="p-1 text-green-600 hover:bg-green-50 rounded"
-                                      title="Mark as Completed"
-                                    >
-                                      <CheckCircle className="w-4 h-4" />
-                                    </button>
-                                  </>
-                                )}
-                                {order.status === 'processing' && (
-                                  <button
-                                    onClick={(e) => { 
-                                      e.stopPropagation();
-                                      updateOrderStatus(order.id, 'completed');
-                                    }}
-                                    className="p-1 text-green-600 hover:bg-green-50 rounded"
-                                    title="Mark as Completed"
-                                  >
-                                    <CheckCircle className="w-4 h-4" />
-                                  </button>
-                                )}
-                                {(order.status === 'pending' || order.status === 'processing') && (
+                                {/* Payment Status Toggle */}
+                                <button
+                                  onClick={(e) => { 
+                                    e.stopPropagation();
+                                    handlePaymentToggle(order.id, order.payment_status);
+                                  }}
+                                  className={`px-3 py-1 text-xs font-medium rounded border ${
+                                    order.payment_status === 'completed' || order.payment_status === 'paid' 
+                                      ? 'text-green-700 bg-green-50 hover:bg-green-100 border-green-200' 
+                                      : 'text-yellow-700 bg-yellow-50 hover:bg-yellow-100 border-yellow-200'
+                                  }`}
+                                  title={order.payment_status === 'completed' || order.payment_status === 'paid' 
+                                    ? 'Mark as Unpaid' 
+                                    : 'Mark as Paid'
+                                  }
+                                >
+                                  {order.payment_status === 'completed' || order.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
+                                </button>
+                                {(order.status === 'pending' || order.status === 'preparing') && (
                                   <button
                                     onClick={(e) => { 
                                       e.stopPropagation();
@@ -757,7 +826,7 @@ export default function CounterDashboard() {
                 {selectedOrder !== null && (
                   <div className="p-4 border-t bg-gray-50">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold">Order Details - #{orders.find(o => o.id === selectedOrder)?.id}</h3>
+                      <h3 className="text-lg font-semibold">Order Details - #{orders.find(o => o.id === selectedOrder)?.id.slice(-6)}</h3>
                       <button
                         onClick={() => setSelectedOrder(null)}
                         className="p-1 text-gray-500 hover:bg-gray-200 rounded"
@@ -799,15 +868,15 @@ export default function CounterDashboard() {
                                   <tr key={item.id} className="border-b last:border-0">
                                     <td className="py-2">{item.name}</td>
                                     <td className="text-center py-2">{item.quantity}</td>
-                                    <td className="text-right py-2">Rs{item.price}</td>
-                                    <td className="text-right py-2">Rs{(item.price * item.quantity).toFixed(2)}</td>
+                                    <td className="text-right py-2">₹{item.price}</td>
+                                    <td className="text-right py-2">₹{(item.price * item.quantity).toFixed(2)}</td>
                                   </tr>
                                 ))}
                               </tbody>
                               <tfoot className="font-medium">
                                 <tr className="border-t">
                                   <td colSpan={3} className="text-right py-2">Total:</td>
-                                  <td className="text-right py-2">Rs{orders.find(o => o.id === selectedOrder)?.total_amount.toFixed(2)}</td>
+                                  <td className="text-right py-2">₹{orders.find(o => o.id === selectedOrder)?.total_amount.toFixed(2)}</td>
                                 </tr>
                               </tfoot>
                             </table>
@@ -899,7 +968,7 @@ export default function CounterDashboard() {
                       <div key={item.id} className="flex items-center justify-between">
                         <div className="flex-1">
                           <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-gray-500">Rs{item.price}</p>
+                          <p className="text-sm text-gray-500">₹{item.price}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -1016,21 +1085,21 @@ export default function CounterDashboard() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal</span>
-                    <span>Rs{subtotal.toFixed(2)}</span>
+                    <span>₹{subtotal.toFixed(2)}</span>
                   </div>
                   {appliedCoupon && (
                     <div className="flex justify-between text-green-600">
                       <span>Discount</span>
-                      <span>-Rs{discount.toFixed(2)}</span>
+                      <span>-₹{discount.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax (18%)</span>
-                    <span>Rs{tax.toFixed(2)}</span>
+                    <span>₹{tax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-semibold pt-2 border-t">
                     <span>Total</span>
-                    <span>Rs{total.toFixed(2)}</span>
+                    <span>₹{total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

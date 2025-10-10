@@ -111,7 +111,7 @@ function FilterModal({
                     onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                     className="w-full"
                   />
-                  <span className="text-sm">Rs{priceRange[1]}</span>
+                  <span className="text-sm">₹{priceRange[1]}</span>
                 </div>
               </div>
 

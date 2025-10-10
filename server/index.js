@@ -6,7 +6,7 @@ import path from 'path';
 import http from 'http';
 import { fileURLToPath } from 'url';
 import { setupSocketIO } from './socket.js';
-import serverless from 'serverless-http';
+// import serverless from 'serverless-http';
 import menuRoutes from './routes/menu.js';
 import orderRoutes from './routes/orders.js';
 import authRoutes from './routes/auth.js';
@@ -162,7 +162,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Export the serverless handler
-export const handler = serverless(app);
+// export const handler = serverless(app);
 
 // Export the Express app
 export default app;

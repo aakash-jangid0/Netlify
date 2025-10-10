@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Coffee, ClipboardList, Boxes, UserCog, Heart, 
   MessageSquare, Ticket, FileText, Globe, QrCode, 
-  DollarSign, Users, TrendingUp, HelpCircle, 
+  Coins, Users, TrendingUp, HelpCircle, 
   Package, ChefHat, Bell
 } from 'lucide-react';
 import StatCard from '../../components/admin/dashboard/StatCard';
@@ -182,7 +182,7 @@ function Dashboard() {
                 <StatCard
                   title="Total Revenue"
                   value={stats.totalRevenue}
-                  icon={DollarSign}
+                  icon={Coins}
                   trend={8}
                   color="bg-green-500"
                   subtitle="vs. previous period"

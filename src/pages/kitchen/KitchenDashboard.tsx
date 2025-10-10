@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, AlertCircle, CheckCircle2, Timer, ChefHat, Search, 
-  Filter, User, Phone, MapPin, Coffee, AlertTriangle, ArrowRight,
-  CheckCircle, XCircle, Clock4, Utensils, DollarSign, Users, Check
+  User, Phone, MapPin, AlertTriangle,
+  CheckCircle, XCircle, Clock4, Utensils, Check
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
@@ -151,9 +151,9 @@ function KitchenDashboard() {
       if (error) throw error;
       setOrders(data || []);
       setError(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error in fetchOrders:', error);
-      setError(error.message);
+      setError(error instanceof Error ? error.message : 'Failed to fetch orders');
       toast.error('Failed to fetch orders');
     } finally {
       setIsLoading(false);
@@ -198,9 +198,9 @@ function KitchenDashboard() {
           color: '#fff'
         }
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating order status:', error);
-      toast.error(error.message || 'Failed to update order status');
+      toast.error(error instanceof Error ? error.message : 'Failed to update order status');
     }
   };
 
@@ -239,9 +239,9 @@ function KitchenDashboard() {
           color: '#fff'
         }
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating item status:', error);
-      toast.error(error.message || 'Failed to update item status');
+      toast.error(error instanceof Error ? error.message : 'Failed to update item status');
     }
   };
 
@@ -500,7 +500,7 @@ function KitchenDashboard() {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <div className="text-sm font-medium text-gray-900">Rs{order.total_amount.toFixed(2)}</div>
+                          <div className="text-sm font-medium text-gray-900">₹{order.total_amount.toFixed(2)}</div>
                           <div className="flex items-center justify-end gap-1">
                             <span className={`h-2 w-2 rounded-full ${
                               order.payment_status === 'paid' ? 'bg-emerald-500' : 

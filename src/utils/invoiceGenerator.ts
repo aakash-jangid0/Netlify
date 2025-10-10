@@ -2,9 +2,33 @@ import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { Invoice } from '../types/invoice';
 import { supabase } from '../lib/supabase';
-import { generatePDF, downloadInvoice as utilsDownloadInvoice, printInvoice as utilsPrintInvoice, emailInvoice as utilsEmailInvoice } from './invoiceUtils';
 import { InvoiceSettings, defaultInvoiceSettings } from '../types/invoiceSettings';
 import QRCode from 'qrcode';
+
+// TypeScript interfaces for jsPDF extensions
+interface QRCodeInfo {
+  content: string;
+  x: number;
+  y: number;
+  size: number;
+}
+
+interface GState {
+  opacity: number;
+}
+
+// Type for jsPDF with possible GState extension
+type JsPDFWithGState = jsPDF & {
+  setGState?: (state: GState) => void;
+  GState?: new (state: { opacity: number }) => GState;
+};
+
+// Using declaration merging to extend jsPDF
+declare module 'jspdf' {
+  interface jsPDF {
+    qrCodeInfo?: QRCodeInfo;
+  }
+}
 
 // Keep the original interfaces for backward compatibility
 interface InvoiceItem {
@@ -94,7 +118,7 @@ export const saveInvoiceToDatabase = async (data: InvoiceData): Promise<string |
     }
     
     // Insert the invoice into the database
-    const { data: invoiceData, error: invoiceError } = await supabase
+    const { error: invoiceError } = await supabase
       .from('invoices')
       .insert({
         id: invoiceId,
@@ -204,12 +228,12 @@ export const generateInvoice = async (data: InvoiceData, templateSettings?: Invo
   }
   
   // Process QR codes if needed
-  if ((templateDoc as any).qrCodeInfo) {
-    const qrInfo = (templateDoc as any).qrCodeInfo;
+  if (templateDoc.qrCodeInfo) {
+    const qrInfo = templateDoc.qrCodeInfo;
     try {
       const qrCodeDataURL = await generateQRCode(qrInfo.content);
       templateDoc.addImage(qrCodeDataURL, 'PNG', qrInfo.x, qrInfo.y, qrInfo.size, qrInfo.size);
-      delete (templateDoc as any).qrCodeInfo; // Clean up after processing
+      delete templateDoc.qrCodeInfo; // Clean up after processing
     } catch (error) {
       console.error('Error generating QR code:', error);
     }
@@ -358,7 +382,7 @@ const generateClassicTemplate = (doc: jsPDF, data: InvoiceData, settings: Invoic
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.text('Sub-Total:', pageWidth - 44, cursorY);
-  doc.text('Rs ' + data.subtotal.toFixed(2), pageWidth - 12, cursorY, { align: 'right' });
+  doc.text('₹' + data.subtotal.toFixed(2), pageWidth - 12, cursorY, { align: 'right' });
   cursorY += 5;
 
   // Add coupon discount if present
@@ -390,8 +414,8 @@ const generateClassicTemplate = (doc: jsPDF, data: InvoiceData, settings: Invoic
     
     // Format the display text based on discount type
     const discountText = data.coupon_discount_type === 'percentage'
-      ? '-' + data.coupon_discount_value + '% (Rs ' + (discountAmount?.toFixed(2) || '0.00') + ')'
-      : 'Rs ' + (discountAmount?.toFixed(2) || '0.00');
+      ? '-' + data.coupon_discount_value + '% (₹' + (discountAmount?.toFixed(2) || '0.00') + ')'
+      : '₹' + (discountAmount?.toFixed(2) || '0.00');
     
     doc.text(discountText, pageWidth - 12, cursorY, { align: 'right' });
     cursorY += 5;
@@ -450,7 +474,7 @@ const generateClassicTemplate = (doc: jsPDF, data: InvoiceData, settings: Invoic
   // Add QR code if enabled
   if (settings.include_qr_code && settings.qr_code_content) {
     // Store QR code info for later generation
-    (doc as any).qrCodeInfo = {
+    doc.qrCodeInfo = {
       content: settings.qr_code_content,
       x: pageWidth / 2 - 15, 
       y: cursorY, 
@@ -553,7 +577,6 @@ const generateModernTemplate = (doc: jsPDF, data: InvoiceData, settings: Invoice
   cursorY += 10;
   
   // Items table header with background
-  const tableStartY = cursorY;
   doc.setFillColor(hexToRgb(settings.secondary_color).r, hexToRgb(settings.secondary_color).g, hexToRgb(settings.secondary_color).b);
   doc.rect(10, cursorY, pageWidth - 20, 8, 'F');
   
@@ -643,7 +666,7 @@ const generateModernTemplate = (doc: jsPDF, data: InvoiceData, settings: Invoice
   // QR code if enabled
   if (settings.include_qr_code && settings.qr_code_content) {
     // Store QR code info for later generation
-    (doc as any).qrCodeInfo = {
+    doc.qrCodeInfo = {
       content: settings.qr_code_content,
       x: 15, 
       y: cursorY, 
@@ -829,7 +852,6 @@ const generatePremiumTemplate = (doc: jsPDF, data: InvoiceData, settings: Invoic
   
   // Items table with premium styling
   // Table header with gradient effect
-  const tableTop = cursorY;
   
   // Create header gradient (simulated with multiple rectangles)
   const gradientSteps = 10;
@@ -998,7 +1020,7 @@ const generatePremiumTemplate = (doc: jsPDF, data: InvoiceData, settings: Invoic
   // Add barcode if enabled
   if (settings.barcode_type === 'qr' && settings.barcode_content) {
     // Store QR code info for later generation
-    (doc as any).qrCodeInfo = { 
+    doc.qrCodeInfo = { 
       content: settings.barcode_content, 
       x: 15, 
       y: cursorY + 15, 
@@ -1137,10 +1159,10 @@ const addWatermark = (doc: jsPDF, text: string, opacity: number = 0.1): void => 
     doc.setTextColor(grayValue, grayValue, grayValue);
     
     // Alternative opacity method for better compatibility
-    if (typeof (doc as any).setGState === 'function') {
+    if (typeof (doc as JsPDFWithGState).setGState === 'function') {
       try {
-        (doc as any).setGState(new (doc as any).GState({ opacity }));
-      } catch (e) {
+        (doc as JsPDFWithGState).setGState?.(new ((doc as JsPDFWithGState).GState!)({ opacity }));
+      } catch {
         console.warn('GState opacity not supported, using color-based opacity');
       }
     }
@@ -1163,10 +1185,10 @@ const addWatermark = (doc: jsPDF, text: string, opacity: number = 0.1): void => 
     doc.setFontSize(currentFontSize);
     
     // Reset graphics state
-    if (typeof (doc as any).setGState === 'function') {
+    if (typeof (doc as JsPDFWithGState).setGState === 'function') {
       try {
-        (doc as any).setGState(new (doc as any).GState({ opacity: 1 }));
-      } catch (e) {
+        (doc as JsPDFWithGState).setGState?.(new ((doc as JsPDFWithGState).GState!)({ opacity: 1 }));
+      } catch {
         // Ignore if not supported
       }
     }
@@ -1238,10 +1260,10 @@ const addStamp = (doc: jsPDF, text: string, color: string): void => {
     doc.setTextColor(colorRGB.r, colorRGB.g, colorRGB.b);
     
     // Try to set opacity if supported
-    if (typeof (doc as any).setGState === 'function') {
+    if (typeof (doc as JsPDFWithGState).setGState === 'function') {
       try {
-        (doc as any).setGState(new (doc as any).GState({ opacity: 0.7 }));
-      } catch (e) {
+        (doc as JsPDFWithGState).setGState?.(new ((doc as JsPDFWithGState).GState!)({ opacity: 0.7 }));
+      } catch {
         console.warn('GState not supported for stamp, using solid color');
       }
     }
@@ -1286,10 +1308,10 @@ const addStamp = (doc: jsPDF, text: string, color: string): void => {
     doc.setFontSize(currentFontSize);
     
     // Reset graphics state
-    if (typeof (doc as any).setGState === 'function') {
+    if (typeof (doc as JsPDFWithGState).setGState === 'function') {
       try {
-        (doc as any).setGState(new (doc as any).GState({ opacity: 1 }));
-      } catch (e) {
+        (doc as JsPDFWithGState).setGState?.(new ((doc as JsPDFWithGState).GState!)({ opacity: 1 }));
+      } catch {
         // Ignore if not supported
       }
     }

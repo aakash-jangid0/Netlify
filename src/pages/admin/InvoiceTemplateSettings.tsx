@@ -1,23 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import { SketchPicker } from 'react-color';
 import { 
   Save, 
-  Printer, 
-  FileText, 
-  Layout, 
-  Edit3, 
-  Image, 
+  Layout,
+  Edit3,
+  Image,
   FileText as FileIcon, 
   Info, 
-  DollarSign, 
+  Coins, 
   Settings, 
   Eye 
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { jsPDF } from 'jspdf';
 import { 
   InvoiceSettings, 
   defaultInvoiceSettings,
@@ -145,7 +140,7 @@ export default function InvoiceTemplateSettings() {
   };
 
   // Handle color change
-  const handleColorChange = (color: any, colorType: string) => {
+  const handleColorChange = (color: { hex: string }, colorType: string) => {
     setSettings(prev => {
       if (!prev) return prev;
       return { ...prev, [colorType]: color.hex };
@@ -434,7 +429,7 @@ export default function InvoiceTemplateSettings() {
           onClick={() => setActiveTab('tax')}
         >
           <div className="flex items-center space-x-1">
-            <DollarSign size={16} />
+            <Coins size={16} />
             <span>Tax Settings</span>
           </div>
         </button>

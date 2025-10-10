@@ -5,12 +5,16 @@ import { Customer } from '../../../types/Customer';
 interface CustomerCardProps {
   customer: Customer;
   onEdit: (customer: Customer) => void;
+  onView?: (customerId: string) => void;
   onStatusChange: (id: string, status: Customer['status']) => void;
 }
 
-export default function CustomerCard({ customer, onEdit, onStatusChange }: CustomerCardProps) {
+export default function CustomerCard({ customer, onEdit, onView, onStatusChange }: CustomerCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div 
+      className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md cursor-pointer transition-shadow"
+      onClick={() => onView?.(customer.id)}
+    >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <div className="bg-gray-100 p-2 rounded-full">
@@ -47,13 +51,16 @@ export default function CustomerCard({ customer, onEdit, onStatusChange }: Custo
         </div>
         <div className="flex items-center text-sm text-gray-500">
           <ShoppingBag className="w-4 h-4 mr-2" />
-          {customer.total_orders} orders · Rs{customer.total_spent.toFixed(2)}
+          {customer.total_orders} orders · ₹{customer.total_spent.toFixed(2)}
         </div>
       </div>
 
       <div className="mt-4 pt-4 border-t border-gray-100">
         <button
-          onClick={() => onEdit(customer)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(customer);
+          }}
           className="text-sm text-blue-600 hover:text-blue-800"
         >
           Edit Details

@@ -152,7 +152,7 @@ function OrderHistory() {
                     </div>
                     <div className="mt-4 md:mt-0 flex items-center space-x-4">
                       <span className="text-lg font-semibold">
-                        Rs{order.total_amount.toFixed(2)}
+                        ₹{order.total_amount.toFixed(2)}
                       </span>
                       {order.coupon_code && (
                         <div className="flex items-center text-sm text-green-600">
@@ -162,7 +162,7 @@ function OrderHistory() {
                           <span>
                             {order.coupon_discount_type === 'percentage'
                               ? `${order.coupon_discount_value}% off`
-                              : `Rs${order.coupon_discount_amount} off`}
+                              : `₹${order.coupon_discount_amount} off`}
                           </span>
                         </div>
                       )}
@@ -247,7 +247,7 @@ function OrderHistory() {
                                 )}
                               </div>
                               <div className="text-right">
-                                <p className="font-medium">Rs{item.price.toFixed(2)}</p>
+                                <p className="font-medium">₹{item.price.toFixed(2)}</p>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();

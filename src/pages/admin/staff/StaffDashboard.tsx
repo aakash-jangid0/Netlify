@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Clock, Award, DollarSign, Calendar, FileText, MessageSquare, ChevronDown, Plus } from 'lucide-react';
+import { Users, Clock, Award, Coins, Calendar, FileText, MessageSquare } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { toast } from 'react-hot-toast';
 import StaffStats from '../../../components/admin/staff/StaffStats';
@@ -17,7 +17,11 @@ export default function StaffDashboard() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
-  const [stats, setStats] = useState({
+  const [shifts, setShifts] = useState([]);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [performanceData, setPerformanceData] = useState([]);
+  const [stats] = useState({
     totalStaff: 0,
     activeStaff: 0,
     averageHours: 40,
@@ -89,7 +93,7 @@ export default function StaffDashboard() {
     { id: 'overview', label: 'Overview', icon: Users },
     { id: 'shifts', label: 'Shifts', icon: Clock },
     { id: 'performance', label: 'Performance', icon: Award },
-    { id: 'payroll', label: 'Payroll', icon: DollarSign },
+    { id: 'payroll', label: 'Payroll', icon: Coins },
     { id: 'leave', label: 'Leave', icon: Calendar },
     { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'communications', label: 'Communications', icon: MessageSquare }
@@ -182,7 +186,74 @@ export default function StaffDashboard() {
         </div>
       )}
 
-      {/* Add other tab content components here */}
+      {activeTab === 'shifts' && (
+        <div className="mt-6">
+          <ShiftScheduler 
+            shifts={shifts}
+            onAddShift={async (shift) => {
+              setShifts(prev => [...prev, shift]);
+              toast.success('Shift added successfully');
+            }}
+            onEditShift={async (id, updatedShift) => {
+              setShifts(prev => prev.map(s => s.id === id ? updatedShift : s));
+              toast.success('Shift updated successfully');
+            }}
+            onDeleteShift={async (id) => {
+              setShifts(prev => prev.filter(s => s.id !== id));
+              toast.success('Shift deleted successfully');
+            }}
+          />
+        </div>
+      )}
+
+      {activeTab === 'performance' && (
+        <div className="mt-6">
+          <StaffPerformance 
+            performanceData={performanceData}
+            staffMembers={staff}
+            onAddReview={async (review) => {
+              setPerformanceData(prev => [...prev, review]);
+              toast.success('Performance review added');
+            }}
+          />
+        </div>
+      )}
+
+      {activeTab === 'documents' && (
+        <div className="mt-6">
+          <DocumentManagement 
+            documents={documents}
+            onUploadDocument={async (document) => {
+              setDocuments(prev => [...prev, document]);
+              toast.success('Document uploaded successfully');
+            }}
+            onDeleteDocument={async (id) => {
+              setDocuments(prev => prev.filter(d => d.id !== id));
+              toast.success('Document deleted successfully');
+            }}
+            onVerifyDocument={async (id, isVerified) => {
+              setDocuments(prev => prev.map(d => 
+                d.id === id ? { ...d, verified: isVerified } : d
+              ));
+              toast.success('Document verification updated');
+            }}
+          />
+        </div>
+      )}
+
+      {activeTab === 'leave' && (
+        <div className="mt-6">
+          <AttendanceTracker 
+            attendanceRecords={attendanceRecords}
+            staffMembers={staff}
+            onMarkAttendance={async (staffId, status) => {
+              const newRecord = { id: Date.now().toString(), staffId, status, date: new Date().toISOString() };
+              setAttendanceRecords(prev => [...prev, newRecord]);
+              toast.success('Attendance marked successfully');
+            }}
+          />
+        </div>
+      )}
 
       <StaffForm
         isOpen={showForm || !!editingStaff}

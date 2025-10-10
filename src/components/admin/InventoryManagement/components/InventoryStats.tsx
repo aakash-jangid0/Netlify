@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Package, AlertTriangle, DollarSign, TrendingDown, Clock, Archive } from 'lucide-react';
+import { Package, AlertTriangle, Coins, TrendingDown, Clock, Archive } from 'lucide-react';
 
 interface InventoryItem {
   id: string;
@@ -107,11 +107,11 @@ export default function InventoryStats({ items }: InventoryStatsProps) {
           <div>
             <p className="text-sm text-gray-500">Total Value</p>
             <p className="text-2xl font-bold text-green-600">
-              Rs{stats.totalValue.toLocaleString()}
+              ₹{stats.totalValue.toLocaleString()}
             </p>
           </div>
           <div className="bg-green-100 p-3 rounded-lg">
-            <DollarSign className="w-6 h-6 text-green-600" />
+            <Coins className="w-6 h-6 text-green-600" />
           </div>
         </div>
       </motion.div>

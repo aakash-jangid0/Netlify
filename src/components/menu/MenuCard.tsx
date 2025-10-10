@@ -104,7 +104,7 @@ const MenuCard = memo(function MenuCard({
           <p className="text-sm text-gray-500 mb-4 flex-1 line-clamp-2">{description}</p>
 
           <div className="flex items-center justify-between mt-auto">
-            <span className="text-lg font-semibold text-orange-500">Rs{price}</span>
+            <span className="text-lg font-semibold text-orange-500">₹{price}</span>
             <button
               ref={buttonRef}
               onClick={handleAddToCart}
@@ -156,7 +156,7 @@ const MenuCard = memo(function MenuCard({
           <p className="text-sm text-gray-500 mb-4 flex-1 line-clamp-2">{description}</p>
 
           <div className="flex items-center justify-between mt-auto">
-            <span className="text-lg font-semibold text-orange-500">Rs{price}</span>
+            <span className="text-lg font-semibold text-orange-500">₹{price}</span>
             <motion.button
               ref={buttonRef}
               whileHover={{ scale: 1.1 }}

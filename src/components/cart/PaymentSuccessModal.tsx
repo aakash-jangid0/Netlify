@@ -61,7 +61,7 @@ export default function PaymentSuccessModal({
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Amount Paid:</span>
-                  <span className="font-medium">Rs{amount.toFixed(2)}</span>
+                  <span className="font-medium">₹{amount.toFixed(2)}</span>
                 </div>
               </div>
             </div>

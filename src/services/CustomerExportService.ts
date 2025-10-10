@@ -8,7 +8,7 @@ export class CustomerExportService {  static exportToCSV(customers: Customer[]):
       Email: customer.email,      Phone: customer.phone,
       'Joined Date': new Date(customer.created_at).toLocaleDateString(),
       'Total Orders': customer.total_orders,
-      'Total Spent': `Rs.${customer.total_spent.toFixed(2)}`,
+      'Total Spent': `₹${customer.total_spent.toFixed(2)}`,
       Status: customer.status
     }));
 

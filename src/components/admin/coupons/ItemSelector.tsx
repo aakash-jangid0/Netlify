@@ -166,7 +166,7 @@ function ItemSelector({ selectedItems, onSelectItems, placeholder }: ItemSelecto
                   <div className="ml-3 flex-1">
                     <div>{item.name}</div>
                     <div className="text-xs text-gray-500">
-                      {item.category_name} • Rs{item.price.toFixed(2)}
+                      {item.category_name} • ₹{item.price.toFixed(2)}
                     </div>
                   </div>
                 </label>

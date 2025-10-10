@@ -32,16 +32,16 @@ import { useMenuItems } from '../../hooks/useMenuItems';
 import { MenuItem } from '../../types/menu';
 
 function WebsiteSettingsComprehensive() {
-  const [isSaving, setIsSaving] = useState(false);
   const [showMenuSelector, setShowMenuSelector] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   
-  // Use the website settings context
+  // Use the website settings context - Fixed isSaving import
   const { 
     settings, 
     updateSettings, 
     saveSettings, 
+    isSaving,
     refreshSettings 
   } = useWebsiteSettings();
 
@@ -58,15 +58,11 @@ function WebsiteSettingsComprehensive() {
   }, [refreshSettings]);
 
   const handleSave = async () => {
-    setIsSaving(true);
     try {
       await saveSettings();
-      toast.success('Website settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('Failed to save settings. Please try again.');
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -217,8 +213,8 @@ function WebsiteSettingsComprehensive() {
     ];
     
     return (
-      <div className="h-[calc(100vh-57px)] bg-white">
-        <div className="h-full overflow-y-auto" style={{ fontFamily: settings.font_family || 'Inter, sans-serif' }}>
+      <div className="h-full bg-white">
+        <div className="h-full" style={{ fontFamily: settings.font_family || 'Inter, sans-serif' }}>
           {/* Header Navigation */}
           <header className="bg-white shadow-sm border-b sticky top-0 z-10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -532,6 +528,7 @@ function WebsiteSettingsComprehensive() {
                           Restaurant Name
                         </label>
                         <input
+                          key="site_name_input"
                           type="text"
                           value={settings.site_name || ''}
                           onChange={(e) => updateSettings({ site_name: e.target.value })}
@@ -545,6 +542,7 @@ function WebsiteSettingsComprehensive() {
                           Tagline
                         </label>
                         <input
+                          key="tagline_input"
                           type="text"
                           value={settings.tagline || ''}
                           onChange={(e) => updateSettings({ tagline: e.target.value })}
@@ -583,6 +581,7 @@ function WebsiteSettingsComprehensive() {
                           Hero Title
                         </label>
                         <input
+                          key="hero_title_input"
                           type="text"
                           value={settings.hero_title || ''}
                           onChange={(e) => updateSettings({ hero_title: e.target.value })}
@@ -596,6 +595,7 @@ function WebsiteSettingsComprehensive() {
                           Hero Subtitle
                         </label>
                         <textarea
+                          key="hero_subtitle_input"
                           value={settings.hero_subtitle || ''}
                           onChange={(e) => updateSettings({ hero_subtitle: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -1120,7 +1120,7 @@ function WebsiteSettingsComprehensive() {
             <h3 className="text-lg font-semibold">Live Preview</h3>
             <p className="text-sm text-gray-600">See how your changes look on the website</p>
           </div>
-          <div className="flex-grow overflow-hidden">
+          <div className="flex-grow overflow-auto">
             <WebsitePreview />
           </div>
         </div>

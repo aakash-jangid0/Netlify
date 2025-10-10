@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { 
-  MessageSquare, Search, Filter, Star, Calendar, 
-  User, FileText, XCircle, ChevronDown, ChevronUp
+  MessageSquare, Search, Star, 
+  User, XCircle, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+
+interface ItemFeedback {
+  item_name: string;
+  rating: number;
+  comment?: string;
+}
 
 type Feedback = {
   id: string;
@@ -20,7 +26,7 @@ type Feedback = {
   customer_name: string | null;
   customer_email: string | null;
   customer_phone: string | null;
-  items_feedback: any[] | null;
+  items_feedback: ItemFeedback[] | null;
   created_at: string;
   updated_at: string;
   order?: {
@@ -52,10 +58,6 @@ const FeedbackManagement = () => {
     fetchFeedbacks();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [feedbacks, filter, searchQuery, viewMode]);
-
   const fetchFeedbacks = async () => {
     setLoading(true);
     try {
@@ -75,15 +77,15 @@ const FeedbackManagement = () => {
 
       setFeedbacks(data || []);
       setFilteredFeedbacks(data || []);
-    } catch (error: any) {
-      console.error('Error fetching feedbacks:', error.message);
+    } catch (error: unknown) {
+      console.error('Error fetching feedbacks:', error instanceof Error ? error.message : 'Unknown error');
       toast.error('Failed to load feedback data');
     } finally {
       setLoading(false);
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let result = [...feedbacks];
 
     // Apply search filter
@@ -133,7 +135,11 @@ const FeedbackManagement = () => {
     }
 
     setFilteredFeedbacks(result);
-  };
+  }, [feedbacks, searchQuery, filter, viewMode]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   const toggleFeedbackExpansion = (feedbackId: string) => {
     if (expandedFeedback === feedbackId) {
@@ -143,13 +149,6 @@ const FeedbackManagement = () => {
     }
   };
   
-  const handleSetFilter = (newFilter: FeedbackFilter) => {
-    setFilter(prevFilter => ({
-      ...prevFilter,
-      ...newFilter
-    }));
-  };
-
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
@@ -365,7 +364,7 @@ const FeedbackManagement = () => {
                           <div className="text-sm text-gray-900">#{feedback.order_id.slice(-6)}</div>
                           {feedback.order?.total_amount && (
                             <div className="text-xs text-gray-500">
-                              Rs{feedback.order.total_amount.toFixed(2)}
+                              ₹{feedback.order.total_amount.toFixed(2)}
                             </div>
                           )}
                         </td>

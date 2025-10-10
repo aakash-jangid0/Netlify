@@ -363,7 +363,7 @@ export default function EnhancedPaymentModal({
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-medium text-gray-700">Amount to Pay</h3>
-                <span className="text-xl font-bold">Rs{amount.toFixed(2)}</span>
+                <span className="text-xl font-bold">₹{amount.toFixed(2)}</span>
               </div>
               <div className="h-px bg-gray-200 w-full my-3"></div>
             </div>

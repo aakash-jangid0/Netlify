@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Tag, Percent, DollarSign, CalendarClock } from 'lucide-react';
+import { Tag, Percent, Coins, CalendarClock } from 'lucide-react';
 
 interface Coupon {
   id: number;
@@ -116,7 +116,7 @@ function CouponStats({ coupons }: CouponStatsProps) {
             )}
           </div>
           <div className="bg-green-100 p-3 rounded-lg">
-            <DollarSign className="h-6 w-6 text-green-600" />
+            <Coins className="h-6 w-6 text-green-600" />
           </div>
         </div>
       </motion.div>

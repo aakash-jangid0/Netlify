@@ -1,9 +1,21 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, AlertTriangle, DollarSign, ShoppingCart, Calendar, ArrowRight, Package, RefreshCcw, TrendingDown, Clock } from 'lucide-react';
+import { TrendingUp, AlertTriangle, ShoppingCart, Calendar, ArrowRight, Package, RefreshCcw, TrendingDown, Clock } from 'lucide-react';
+
+interface InventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  min_quantity: number;
+  max_quantity: number;
+  expiry_date?: string;
+  category?: string;
+  transactions?: Array<{ id: string; date: string; type: string; quantity: number }>;
+}
 
 interface InventorySuggestionsProps {
-  items: any[];
+  items: InventoryItem[];
   onReorder: (items: string[]) => void;
 }
 
@@ -26,7 +38,6 @@ export default function InventorySuggestions({ items, onReorder }: InventorySugg
     });
 
     const seasonalItems = items.filter(item => {
-      const currentMonth = new Date().getMonth();
       // Example seasonal logic - can be customized
       const isSeasonalItem = item.category === 'vegetables' || item.category === 'fruits';
       return isSeasonalItem && item.quantity < item.max_quantity * 0.7;

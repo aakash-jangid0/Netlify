@@ -425,7 +425,7 @@ function Cart() {
                     />
                     <div className="flex-1">
                       <h3 className="font-medium">{item.name}</h3>
-                      <p className="text-gray-500">Rs{item.price}</p>
+                      <p className="text-gray-500">₹{item.price}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <motion.button
@@ -613,21 +613,21 @@ function Cart() {
                     <div className="bg-orange-50 p-4 rounded-lg border border-orange-100 space-y-3 mb-6">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-700">Subtotal</span>
-                        <span>Rs{subtotal.toFixed(2)}</span>
+                        <span>₹{subtotal.toFixed(2)}</span>
                       </div>
                       {appliedCoupon && (
                         <div className="flex justify-between text-sm text-green-600">
                           <span>Discount</span>
-                          <span>-Rs{discountAmount.toFixed(2)}</span>
+                          <span>-₹{discountAmount.toFixed(2)}</span>
                         </div>
                       )}
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-700">Tax (18%)</span>
-                        <span>Rs{tax.toFixed(2)}</span>
+                        <span>₹{tax.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-lg font-bold pt-3 border-t border-orange-200 text-gray-900">
                         <span>Total</span>
-                        <span>Rs{total.toFixed(2)}</span>
+                        <span>₹{total.toFixed(2)}</span>
                       </div>
                     </div>
 

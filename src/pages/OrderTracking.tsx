@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, ChefHat, Bell, Check, ArrowLeft, MapPin, Timer, 
   User, Utensils, ArrowRight, AlertCircle, Calendar,
-  CreditCard, DollarSign, MessageSquare, Download
+  CreditCard, Coins, MessageSquare, Download
 } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -419,9 +419,9 @@ function OrderTracking() {
                 value={`${order.payment_method} (${order.payment_status})`}
               />
               <InfoCard
-                icon={DollarSign}
+                icon={Coins}
                 label="Total"
-                value={`Rs${order.total_amount.toFixed(2)}`}
+                value={`₹${order.total_amount.toFixed(2)}`}
               />
             </div>
 
@@ -548,14 +548,14 @@ function OrderTracking() {
                             )}
                           </div>
                         </div>
-                        <span className="font-medium">Rs{(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="font-medium">₹{(item.price * item.quantity).toFixed(2)}</span>
                       </motion.div>
                     ))}
 
                     <div className="border-t pt-4 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Subtotal</span>
-                        <span>Rs{order.total_amount.toFixed(2)}</span>
+                        <span>₹{order.total_amount.toFixed(2)}</span>
                       </div>
                       {order.coupon_code && (
                         <div className="flex justify-between text-sm text-green-600">
@@ -572,15 +572,15 @@ function OrderTracking() {
                       )}
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Subtotal</span>
-                        <span>Rs{order.total_amount.toFixed(2)}</span>
+                        <span>₹{order.total_amount.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Tax (18%)</span>
-                        <span>Rs{(order.total_amount * 0.18).toFixed(2)}</span>
+                        <span>₹{(order.total_amount * 0.18).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between font-semibold text-lg pt-2 border-t">
                         <span>Total</span>
-                        <span>Rs{(order.total_amount * 1.18).toFixed(2)}</span>
+                        <span>₹{(order.total_amount * 1.18).toFixed(2)}</span>
                       </div>
 
                       {/* Invoice Actions */}

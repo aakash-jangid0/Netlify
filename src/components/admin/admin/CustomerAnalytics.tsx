@@ -2,17 +2,35 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Customer } from '../../../types/Customer';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, DollarSign, Users, ShoppingBag } from 'lucide-react';
+import { TrendingUp, Coins, Users, ShoppingBag } from 'lucide-react';
 
 interface CustomerAnalyticsProps {
   customers: Customer[];
 }
 
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    dataKey: string;
+    name: string;
+    color: string;
+  }>;
+  label?: string;
+}
+
+interface PieLabelProps {
+  name?: string;
+  percent?: number;
+}
+
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export default function CustomerAnalytics({ customers = [] }: CustomerAnalyticsProps) {
-  // Ensure customers is an array even if undefined is passed
-  const safeCustomers = Array.isArray(customers) ? customers : [];
+  // Ensure customers is an array even if undefined is passed - wrapped in useMemo to prevent dependency issues
+  const safeCustomers = React.useMemo(() => {
+    return Array.isArray(customers) ? customers : [];
+  }, [customers]);
   
   // Calculate customer acquisition data by month
   const getCustomerGrowthData = () => {
@@ -97,11 +115,11 @@ export default function CustomerAnalytics({ customers = [] }: CustomerAnalyticsP
   
   // Calculate spent amount distribution
   const getSpendingDistributionData = () => {    const ranges = [
-      { name: 'Rs0', min: 0, max: 0 },
-      { name: 'Rs1-500', min: 1, max: 500 },
-      { name: 'Rs501-1000', min: 501, max: 1000 },
-      { name: 'Rs1001-2000', min: 1001, max: 2000 },
-      { name: 'Rs2000+', min: 2001, max: Infinity }
+      { name: '₹0', min: 0, max: 0 },
+      { name: '₹1-500', min: 1, max: 500 },
+      { name: '₹501-1000', min: 501, max: 1000 },
+      { name: '₹1001-2000', min: 1001, max: 2000 },
+      { name: '₹2000+', min: 2001, max: Infinity }
     ];
     
     const spendingData = ranges.map(range => {
@@ -143,12 +161,12 @@ export default function CustomerAnalytics({ customers = [] }: CustomerAnalyticsP
   }
   
   // Custom tooltip for the charts with error handling
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     if (active && payload && Array.isArray(payload) && payload.length > 0) {
       return (
         <div className="bg-white p-3 rounded-lg shadow-md border border-gray-100">
           <p className="font-medium text-gray-700">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
               {entry.name}: {entry.value}
             </p>
@@ -207,13 +225,13 @@ export default function CustomerAnalytics({ customers = [] }: CustomerAnalyticsP
   }, [safeCustomers]);
 
   // Safe rendering function for PieChart
-  const renderCustomizedLabel = ({ name, percent }: any) => {
+  const renderCustomizedLabel = ({ name, percent }: PieLabelProps) => {
     try {
       if (name && typeof percent === 'number') {
         return `${name}: ${(percent * 100).toFixed(0)}%`;
       }
       return '';
-    } catch (error) {
+    } catch {
       return '';
     }
   };
@@ -364,10 +382,10 @@ export default function CustomerAnalytics({ customers = [] }: CustomerAnalyticsP
           
           <div className="bg-white p-4 rounded-lg border border-gray-100">
             <div className="flex items-center text-green-500 mb-2">
-              <DollarSign className="w-5 h-5 mr-2" />
+              <Coins className="w-5 h-5 mr-2" />
               <span className="font-medium">Revenue Growth</span>
             </div>            <p className="text-sm text-gray-600">
-              Average spend per customer: Rs{averageSpend}
+              Average spend per customer: ₹{averageSpend}
             </p>
           </div>
           
